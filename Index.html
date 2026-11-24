@@ -1,0 +1,2970 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mon Atelier Magique</title>
+  <!-- Chargement de Tailwind CSS pour une mise en page fluide et responsive -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tesseract.js pour l'OCR local en français lorsque /.netlify/functions/gemini n'est pas disponible -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <!-- Police Inter pour une lecture claire et moderne -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    /* =========================================================================
+       VARIABLES DE CONFORT VISUEL ET ACCESSIBILITÉ MULTI-DYS
+       ========================================================================= */
+    :root {
+      --bg-page: #fdf8ef;
+      --bg-card: #ffffff;
+      --bg-soft: #f4ece0;
+      --text-primary: #1e293b;
+      --text-secondary: #475569;
+      --border-soft: #e4d9c6;
+      --kw-bg: #fef08a;
+      --kw-color: #713f12;
+
+      --font-active: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --fs-body: 1.08rem;
+      --fs-lead: 1.2rem;
+      --fs-title: 1.45rem;
+      --fs-hero: 1.8rem;
+      --lh-body: 1.75;
+      --ls-body: 0.015em;
+      --ws-body: 0.05em;
+    }
+
+    /* Fond crème/ivoire par défaut, avec variantes douces possibles */
+    body[data-theme="creme"] {
+      --bg-page: #fdf8ef;
+      --bg-card: #ffffff;
+      --bg-soft: #f4ece0;
+      --border-soft: #e4d9c6;
+    }
+    body[data-theme="bleu"] {
+      --bg-page: #eef6fc;
+      --bg-card: #ffffff;
+      --bg-soft: #deedf9;
+      --border-soft: #c5def3;
+    }
+    body[data-theme="vert"] {
+      --bg-page: #eef8f2;
+      --bg-card: #ffffff;
+      --bg-soft: #def1e6;
+      --border-soft: #c2e2d0;
+    }
+
+    /* Rythme calme / taille d'affichage */
+    body[data-pace="calme"] {
+      --fs-body: 1.2rem;
+      --fs-lead: 1.35rem;
+      --fs-title: 1.6rem;
+      --fs-hero: 2rem;
+      --lh-body: 1.95;
+    }
+    body[data-pace="standard"] {
+      --fs-body: 1.08rem;
+      --fs-lead: 1.2rem;
+      --fs-title: 1.45rem;
+      --fs-hero: 1.8rem;
+      --lh-body: 1.75;
+    }
+
+    /* Mode "Lecture facile" (bouton rapide ou choix profil) */
+    body.easy-read-enabled,
+    body[data-visual-aid="espacement"] {
+      --font-active: Verdana, 'Inter', sans-serif;
+      --lh-body: 2.08;
+      --ls-body: 0.06em;
+      --ws-body: 0.18em;
+    }
+
+    body {
+      background-color: var(--bg-page);
+      color: var(--text-primary);
+      font-family: var(--font-active);
+      line-height: var(--lh-body);
+      letter-spacing: var(--ls-body);
+      word-spacing: var(--ws-body);
+      transition: background-color 0.25s ease, color 0.25s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .surface-card {
+      background-color: var(--bg-card);
+      border-color: var(--border-soft);
+    }
+
+    .surface-soft {
+      background-color: var(--bg-soft);
+      border-color: var(--border-soft);
+    }
+
+    .text-muted-soft {
+      color: var(--text-secondary);
+    }
+
+    .t-body { font-size: var(--fs-body); }
+    .t-lead { font-size: var(--fs-lead); }
+    .t-title { font-size: var(--fs-title); line-height: 1.35; }
+    .t-hero { font-size: var(--fs-hero); line-height: 1.25; }
+
+    /* Surlignement doux des mots-clés entourés de **mot** */
+    .keyword-mark {
+      font-weight: 700;
+      border-radius: 0.45rem;
+      padding: 0.05rem 0.28rem;
+      background-color: transparent;
+      color: inherit;
+      transition: background-color 0.2s ease;
+    }
+
+    body.easy-read-enabled .keyword-mark,
+    body[data-visual-aid="surlignage"] .keyword-mark,
+    body[data-visual-aid="espacement"] .keyword-mark {
+      background-color: var(--kw-bg);
+      color: var(--kw-color);
+    }
+
+    /* Cibles tactiles larges et confortables pour iPhone, iPad et PC */
+    .touch-btn {
+      min-height: 52px;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    @keyframes fadeSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .panel-enter {
+      animation: fadeSlideUp 0.22s ease-out;
+    }
+  </style>
+</head>
+<body data-theme="creme" data-pace="standard" data-visual-aid="surlignage" class="min-h-screen pb-28">
+
+  <!-- =========================================================================
+       1. EN-TÊTE DOUX ET LISIBLE + BARRE DE SÉLECTION DE LEÇON + ONGLETS
+       ========================================================================= -->
+  <header class="sticky top-0 z-30 border-b backdrop-blur-md" style="background-color: color-mix(in srgb, var(--bg-page) 92%, transparent); border-color: var(--border-soft);">
+    <div class="max-w-4xl mx-auto px-4 py-3 space-y-3">
+
+      <!-- Ligne supérieure : Titre et boutons rapides (Lecture facile, Profil, Espace Parent) -->
+      <div class="flex flex-wrap items-center justify-between gap-2.5">
+        <div class="flex items-center gap-3 min-w-0">
+          <span class="w-11 h-11 rounded-2xl bg-amber-100 border border-amber-200 flex items-center justify-center text-2xl shrink-0 select-none" aria-hidden="true">
+            ✨
+          </span>
+          <div class="min-w-0">
+            <h1 class="font-extrabold text-lg sm:text-xl leading-tight truncate">Mon Atelier Magique</h1>
+            <p class="text-xs sm:text-sm font-medium text-muted-soft truncate">Apprendre à mon rythme, sans stress</p>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <button
+            id="btn-toggle-easy-read"
+            type="button"
+            aria-pressed="false"
+            class="touch-btn px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-bold border surface-soft hover:opacity-90 transition inline-flex items-center gap-1.5"
+          >
+            <span aria-hidden="true">📖</span>
+            <span id="label-easy-read">Lecture facile</span>
+          </button>
+
+          <button
+            id="btn-header-profil"
+            type="button"
+            class="touch-btn px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-bold border bg-sky-50 text-sky-900 border-sky-200 hover:bg-sky-100 transition inline-flex items-center gap-1.5"
+          >
+            <span aria-hidden="true">🎨</span>
+            <span>Profil</span>
+          </button>
+
+          <button
+            id="btn-header-parent"
+            type="button"
+            class="touch-btn px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-bold border bg-amber-50 text-amber-950 border-amber-300 hover:bg-amber-100 transition inline-flex items-center gap-1.5"
+          >
+            <span aria-hidden="true">📷</span>
+            <span>Espace Parent</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. Barre de sélection de leçon + bouton "+ Scanner une leçon" -->
+      <div class="surface-soft rounded-2xl border px-3.5 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <div class="flex items-center gap-2.5 flex-1 min-w-0">
+          <label for="select-active-lesson" class="text-xs sm:text-sm font-bold text-muted-soft shrink-0">
+            Leçon :
+          </label>
+          <select
+            id="select-active-lesson"
+            class="touch-btn flex-1 min-w-0 rounded-xl border surface-card px-3 py-2 text-xs sm:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-sky-500"
+          ></select>
+        </div>
+
+        <button
+          id="btn-plus-scanner"
+          type="button"
+          class="touch-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-amber-500 text-white hover:bg-amber-600 transition inline-flex items-center justify-center gap-1.5 shrink-0 shadow-sm"
+        >
+          <span aria-hidden="true">+</span>
+          <span>Scanner une leçon</span>
+        </button>
+      </div>
+
+      <!-- Navigation par onglets : Mon profil, 1 Découverte, 2 Mini-jeu, 3 Quiz -->
+      <nav aria-label="Navigation principale" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <button
+          id="tab-profil"
+          type="button"
+          data-tab="profil"
+          class="main-tab-btn touch-btn rounded-2xl px-3 py-2.5 text-xs sm:text-sm font-bold border transition flex items-center justify-center gap-1.5"
+        >
+          <span aria-hidden="true">🎨</span>
+          <span>Mon profil</span>
+        </button>
+
+        <button
+          id="tab-decouverte"
+          type="button"
+          data-tab="decouverte"
+          class="main-tab-btn touch-btn rounded-2xl px-3 py-2.5 text-xs sm:text-sm font-bold border transition flex items-center justify-center gap-1.5"
+        >
+          <span aria-hidden="true">1</span>
+          <span>Découverte</span>
+        </button>
+
+        <button
+          id="tab-jeu"
+          type="button"
+          data-tab="jeu"
+          class="main-tab-btn touch-btn rounded-2xl px-3 py-2.5 text-xs sm:text-sm font-bold border transition flex items-center justify-center gap-1.5"
+        >
+          <span aria-hidden="true">2</span>
+          <span>Mini-jeu</span>
+        </button>
+
+        <button
+          id="tab-quiz"
+          type="button"
+          data-tab="quiz"
+          class="main-tab-btn touch-btn rounded-2xl px-3 py-2.5 text-xs sm:text-sm font-bold border transition flex items-center justify-center gap-1.5"
+        >
+          <span aria-hidden="true">3</span>
+          <span>Quiz</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       CONTENU PRINCIPAL DES VUES (AVEC MARGE BASSE GÉNÉREUSE pb-28)
+       ========================================================================= -->
+  <main class="max-w-4xl mx-auto px-4 pt-6 pb-28 space-y-6">
+
+    <!-- =======================================================================
+         3. ONGLET "MON PROFIL" : MINI-JEU DE DÉCOUVERTE EN 4 ÉTAPES
+         ======================================================================= -->
+    <section id="view-profil" class="app-view panel-enter space-y-6" aria-labelledby="heading-profil">
+      <div class="surface-card rounded-3xl border p-5 sm:p-8 shadow-sm space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="space-y-1">
+            <span class="inline-block px-3 py-1 rounded-full text-xs font-bold bg-sky-100 text-sky-900">
+              Mini-jeu de profilage • 4 étapes
+            </span>
+            <h2 id="heading-profil" class="t-hero font-extrabold">
+              Découvrons ce qui t'aide le mieux
+            </h2>
+            <p class="t-body text-muted-soft">
+              Choisis et modifie librement chaque étape. Tu peux revenir en arrière quand tu veux.
+            </p>
+          </div>
+          <span id="profil-step-counter" class="px-4 py-2 rounded-2xl text-sm font-bold surface-soft border self-start sm:self-center shrink-0">
+            Étape 1 / 4
+          </span>
+        </div>
+
+        <!-- Sélecteur direct des 4 étapes pour modifier librement n'importe quelle réponse -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" role="tablist" aria-label="Étapes du profilage">
+          <button type="button" data-profil-jump="1" class="profil-step-pill touch-btn rounded-2xl px-3 py-2 text-xs sm:text-sm font-bold border transition">
+            1. Aide visuelle
+          </button>
+          <button type="button" data-profil-jump="2" class="profil-step-pill touch-btn rounded-2xl px-3 py-2 text-xs sm:text-sm font-bold border transition">
+            2. Écoute audio
+          </button>
+          <button type="button" data-profil-jump="3" class="profil-step-pill touch-btn rounded-2xl px-3 py-2 text-xs sm:text-sm font-bold border transition">
+            3. Rythme calme
+          </button>
+          <button type="button" data-profil-jump="4" class="profil-step-pill touch-btn rounded-2xl px-3 py-2 text-xs sm:text-sm font-bold border transition">
+            4. Format préféré
+          </button>
+        </div>
+
+        <!-- Contenu de l'étape active du profilage -->
+        <div id="profil-stage-container" class="space-y-4"></div>
+
+        <!-- Boutons Précédent / Suivant du profilage -->
+        <div class="pt-4 border-t flex flex-wrap items-center justify-between gap-3" style="border-color: var(--border-soft);">
+          <button
+            id="btn-profil-prev"
+            type="button"
+            class="touch-btn px-5 py-3 rounded-2xl font-bold border surface-soft hover:opacity-90 transition"
+          >
+            ← Étape précédente
+          </button>
+
+          <button
+            id="btn-profil-next"
+            type="button"
+            class="touch-btn px-6 py-3 rounded-2xl font-bold bg-sky-600 text-white hover:bg-sky-700 transition shadow-sm ml-auto"
+          >
+            Étape suivante →
+          </button>
+        </div>
+      </div>
+
+      <!-- Résumé clair du profil + bouton "Démarrer la leçon" -->
+      <div class="surface-soft rounded-3xl border p-5 sm:p-7 shadow-sm space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <h3 class="t-title font-extrabold">Résumé de ton profil personnalisé</h3>
+          <button
+            id="btn-profil-test-voice"
+            type="button"
+            class="touch-btn px-4 py-2 rounded-2xl text-sm font-bold surface-card border hover:opacity-90 transition inline-flex items-center gap-2 self-start sm:self-auto"
+          >
+            <span aria-hidden="true">🔊</span>
+            <span>Tester la voix</span>
+          </button>
+        </div>
+
+        <div id="profil-summary-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+
+        <div class="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p class="t-body text-muted-soft text-center sm:text-left">
+            Tout est enregistré automatiquement pour ta leçon.
+          </p>
+          <button
+            id="btn-start-lesson-from-profil"
+            type="button"
+            class="touch-btn w-full sm:w-auto px-7 py-3.5 rounded-2xl font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 transition shadow-sm"
+          >
+            Démarrer la leçon 🚀
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         4. ONGLET "1 DÉCOUVERTE" : 4 CARTES PÉDAGOGIQUES + VOIX FR NATURELLE
+         ======================================================================= -->
+    <section id="view-decouverte" class="app-view hidden panel-enter space-y-6" aria-labelledby="heading-decouverte">
+      <div class="surface-card rounded-3xl border p-5 sm:p-7 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="space-y-1.5">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="px-3 py-1 rounded-full text-xs font-bold bg-sky-100 text-sky-900">
+              Étape 1 • Découverte
+            </span>
+            <span id="decouverte-subject-pill" class="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-950">
+              Sciences
+            </span>
+          </div>
+          <h2 id="heading-decouverte" class="t-hero font-extrabold">
+            Le cycle de l'eau
+          </h2>
+          <p class="t-body text-muted-soft">
+            Lis chaque carte tranquillement ou appuie sur « Écouter » pour entendre la voix française.
+          </p>
+        </div>
+      </div>
+
+      <!-- Grille des 4 cartes pédagogiques -->
+      <div id="decouverte-cards-grid" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div>
+
+      <!-- Passage vers le mini-jeu -->
+      <div class="surface-card rounded-3xl border p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+        <p class="t-lead font-bold text-center sm:text-left">
+          Tu as découvert les 4 étapes ? Place au mini-jeu !
+        </p>
+        <button
+          id="btn-go-mini-jeu"
+          type="button"
+          class="touch-btn w-full sm:w-auto px-6 py-3.5 rounded-2xl font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 transition shadow-sm"
+        >
+          Passer au mini-jeu 🧩 →
+        </button>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         5. ONGLET "2 MINI-JEU" : ASSOCIATION PAR SIMPLE CLIC / TAP
+         ======================================================================= -->
+    <section id="view-jeu" class="app-view hidden panel-enter space-y-6" aria-labelledby="heading-jeu">
+      <div class="surface-card rounded-3xl border p-5 sm:p-7 shadow-sm space-y-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="space-y-1">
+            <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-900">
+              Étape 2 • Mini-jeu d'association
+            </span>
+            <h2 id="heading-jeu" class="t-hero font-extrabold">
+              Relie chaque idée à son explication
+            </h2>
+            <p class="t-body text-muted-soft">
+              Touche une carte à <strong>gauche</strong>, puis touche la carte qui va avec à <strong>droite</strong>.
+            </p>
+          </div>
+
+          <div class="flex items-center gap-2.5 shrink-0">
+            <span id="jeu-score-badge" class="px-4 py-2 rounded-2xl text-sm font-extrabold bg-emerald-100 text-emerald-950">
+              0 / 4 reliés
+            </span>
+            <button
+              id="btn-jeu-reset"
+              type="button"
+              class="touch-btn px-4 py-2 rounded-2xl text-sm font-bold border surface-soft hover:opacity-90 transition"
+            >
+              Recommencer
+            </button>
+          </div>
+        </div>
+
+        <!-- Retour bienveillant ou indice doux en cas d'erreur -->
+        <div id="jeu-feedback-banner" class="hidden rounded-2xl p-4 border t-body font-bold" role="status" aria-live="polite"></div>
+
+        <!-- Colonnes tactiles gauche / droite -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div class="space-y-3">
+            <h3 class="text-sm font-extrabold uppercase tracking-wide text-muted-soft px-1">
+              À gauche : l'étape ou notion
+            </h3>
+            <div id="jeu-left-column" class="space-y-3"></div>
+          </div>
+
+          <div class="space-y-3">
+            <h3 class="text-sm font-extrabold uppercase tracking-wide text-muted-soft px-1">
+              À droite : ce qu'il se passe
+            </h3>
+            <div id="jeu-right-column" class="space-y-3"></div>
+          </div>
+        </div>
+
+        <!-- Barre de progression et bouton "Passer au quiz" -->
+        <div class="pt-4 border-t flex flex-col sm:flex-row items-center justify-between gap-4" style="border-color: var(--border-soft);">
+          <div class="w-full sm:flex-1 space-y-1.5">
+            <div class="flex justify-between text-xs sm:text-sm font-bold text-muted-soft">
+              <span>Progression du mini-jeu</span>
+              <span id="jeu-progress-pct">0 %</span>
+            </div>
+            <div class="w-full h-3 rounded-full surface-soft overflow-hidden">
+              <div id="jeu-progress-bar" class="h-full bg-emerald-500 rounded-full transition-all duration-300" style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <button
+            id="btn-go-quiz"
+            type="button"
+            class="touch-btn w-full sm:w-auto px-6 py-3.5 rounded-2xl font-extrabold bg-sky-600 text-white hover:bg-sky-700 transition shadow-sm shrink-0"
+          >
+            Passer au quiz 🏆 →
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         6. ONGLET "3 QUIZ" : 4 QUESTIONS MODIFIABLES LIBREMENT + CÉLÉBRATION
+         ======================================================================= -->
+    <section id="view-quiz" class="app-view hidden panel-enter space-y-6" aria-labelledby="heading-quiz">
+      <div class="surface-card rounded-3xl border p-5 sm:p-7 shadow-sm space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="space-y-1">
+            <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-950">
+              Étape 3 • Quiz de 4 questions • Choix modifiable à tout moment
+            </span>
+            <h2 id="heading-quiz" class="t-hero font-extrabold">
+              Vérifions ce que tu as retenu
+            </h2>
+          </div>
+
+          <span id="quiz-question-badge" class="px-4 py-2 rounded-2xl text-sm font-extrabold bg-sky-100 text-sky-950 self-start sm:self-center shrink-0">
+            Question 1 / 4
+          </span>
+        </div>
+
+        <!-- Barre de progression du quiz -->
+        <div class="w-full h-3.5 rounded-full surface-soft overflow-hidden" aria-hidden="true">
+          <div id="quiz-progress-bar" class="h-full bg-sky-600 rounded-full transition-all duration-300" style="width: 25%;"></div>
+        </div>
+
+        <!-- Zone dynamique de la question en cours ou de l'écran de célébration -->
+        <div id="quiz-dynamic-area"></div>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         7. ESPACE PARENT : PIN (1234 + ACCÈS RAPIDE), SCANNER & RÉGLAGES
+         ======================================================================= -->
+    <section id="view-parent" class="app-view hidden panel-enter space-y-6" aria-labelledby="heading-parent">
+
+      <!-- Écran de verrouillage PIN (code par défaut : 1234 + bouton Accès rapide) -->
+      <div id="parent-pin-screen" class="surface-card rounded-3xl border p-6 sm:p-8 shadow-sm max-w-lg mx-auto space-y-5">
+        <div class="flex items-center justify-between gap-2">
+          <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-950">
+            Espace Parent sécurisé
+          </span>
+          <button
+            id="btn-pin-back-child"
+            type="button"
+            class="touch-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold border surface-soft hover:opacity-90 transition"
+          >
+            ← Retour enfant
+          </button>
+        </div>
+
+        <div class="space-y-1.5">
+          <h2 id="heading-parent" class="t-title font-extrabold">Entrez le code PIN parent</h2>
+          <p class="t-body text-muted-soft">
+            Code par défaut : <strong id="display-current-pin">1234</strong>. Vous pouvez aussi utiliser l'accès rapide.
+          </p>
+        </div>
+
+        <div class="space-y-2">
+          <label for="input-parent-pin" class="block text-sm font-bold">Code PIN</label>
+          <input
+            id="input-parent-pin"
+            type="password"
+            inputmode="numeric"
+            maxlength="8"
+            placeholder="1234"
+            class="touch-btn w-full rounded-2xl border surface-card px-4 py-3 text-xl font-extrabold tracking-widest text-center focus:outline-none focus:ring-2 focus:ring-amber-500"
+          />
+          <p id="parent-pin-error" class="hidden text-sm font-bold text-rose-700"></p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3">
+          <button
+            id="btn-parent-unlock"
+            type="button"
+            class="touch-btn flex-1 px-5 py-3 rounded-2xl font-bold bg-amber-500 text-white hover:bg-amber-600 transition shadow-sm"
+          >
+            Déverrouiller
+          </button>
+          <button
+            id="btn-parent-quick-access"
+            type="button"
+            class="touch-btn px-5 py-3 rounded-2xl font-bold border surface-soft hover:opacity-90 transition"
+          >
+            Accès rapide
+          </button>
+        </div>
+      </div>
+
+      <!-- Contenu complet de l'Espace Parent une fois déverrouillé -->
+      <div id="parent-dashboard" class="hidden space-y-6">
+
+        <!-- En-tête de l'Espace Parent -->
+        <div class="surface-card rounded-3xl border p-5 sm:p-7 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="space-y-1">
+            <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-950">
+              Espace Parent • Création & réglages
+            </span>
+            <h2 class="t-hero font-extrabold">Scanner une leçon & gérer l'atelier</h2>
+            <p class="t-body text-muted-soft">
+              Photographiez une leçon ou collez son texte pour générer automatiquement les 4 cartes, le mini-jeu et le quiz.
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-2 shrink-0">
+            <button
+              id="btn-parent-lock"
+              type="button"
+              class="touch-btn px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold border surface-soft hover:opacity-90 transition"
+            >
+              Verrouiller
+            </button>
+            <button
+              id="btn-parent-go-child"
+              type="button"
+              class="touch-btn px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold bg-sky-600 text-white hover:bg-sky-700 transition"
+            >
+              Voir côté enfant →
+            </button>
+          </div>
+        </div>
+
+        <!-- Module "Scanner une leçon" -->
+        <div class="surface-card rounded-3xl border p-5 sm:p-7 shadow-sm space-y-5">
+          <h3 class="t-title font-extrabold">1. Scanner une leçon (photo ou texte)</h3>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <!-- Capture photo directe avec l'appareil photo -->
+            <label
+              for="input-scan-camera"
+              class="touch-btn rounded-2xl p-4 border-2 border-dashed border-amber-400 bg-amber-50/70 hover:bg-amber-100/70 transition flex flex-col items-center justify-center text-center gap-1"
+            >
+              <span class="text-3xl" aria-hidden="true">📸</span>
+              <span class="font-extrabold text-sm sm:text-base text-amber-950">Prendre une photo</span>
+              <span class="text-xs text-amber-900/80">Appareil photo (iPhone, iPad, tablette)</span>
+              <input
+                id="input-scan-camera"
+                type="file"
+                accept="image/*"
+                capture="environment"
+                class="hidden"
+              />
+            </label>
+
+            <!-- Sélection d'un fichier image existant -->
+            <label
+              for="input-scan-file"
+              class="touch-btn rounded-2xl p-4 border-2 border-dashed border-sky-400 bg-sky-50/70 hover:bg-sky-100/70 transition flex flex-col items-center justify-center text-center gap-1"
+            >
+              <span class="text-3xl" aria-hidden="true">🖼️</span>
+              <span class="font-extrabold text-sm sm:text-base text-sky-950">Choisir une image</span>
+              <span class="text-xs text-sky-900/80">Depuis la galerie ou l'ordinateur</span>
+              <input
+                id="input-scan-file"
+                type="file"
+                accept="image/*"
+                class="hidden"
+              />
+            </label>
+          </div>
+
+          <!-- Aperçu de la photo compressée -->
+          <div id="scan-preview-container" class="hidden surface-soft rounded-2xl border p-4 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <span id="scan-preview-info" class="text-xs sm:text-sm font-bold">Photo prête</span>
+              <button
+                id="btn-scan-clear-image"
+                type="button"
+                class="touch-btn px-3.5 py-1.5 rounded-xl text-xs font-bold bg-rose-100 text-rose-900 hover:bg-rose-200 transition"
+              >
+                Retirer la photo
+              </button>
+            </div>
+            <img
+              id="scan-preview-img"
+              alt="Aperçu compressé de la leçon"
+              class="max-h-64 w-auto mx-auto rounded-2xl border object-contain"
+            />
+          </div>
+
+          <!-- Zone de collage ou saisie de texte de leçon -->
+          <div class="space-y-2">
+            <label for="input-scan-text" class="block text-sm font-bold">
+              Texte de la leçon (à coller ou compléter si besoin)
+            </label>
+            <textarea
+              id="input-scan-text"
+              rows="4"
+              placeholder="Collez ici le texte d'une leçon ou ajoutez des précisions sur la photo..."
+              class="w-full rounded-2xl border surface-card p-4 t-body focus:outline-none focus:ring-2 focus:ring-sky-500"
+            ></textarea>
+          </div>
+
+          <!-- Indicateur d'état clair (fonction Netlify ou secours OCR local) -->
+          <div id="scan-generation-status" class="hidden rounded-2xl p-4 border t-body" role="status" aria-live="polite"></div>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <button
+              id="btn-run-generation"
+              type="button"
+              class="touch-btn px-6 py-3.5 rounded-2xl font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 transition shadow-sm inline-flex items-center gap-2"
+            >
+              <span aria-hidden="true">✨</span>
+              <span id="label-run-generation">Générer le cours, le jeu et le quiz</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Écran de relecture et d'édition complet -->
+        <div id="parent-editor-panel" class="hidden surface-card rounded-3xl border p-5 sm:p-7 shadow-sm space-y-6">
+          <div class="border-b pb-4 space-y-1" style="border-color: var(--border-soft);">
+            <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-950">
+              2. Relecture & édition complète
+            </span>
+            <h3 class="t-title font-extrabold">Vérifiez et modifiez la leçon avant de la lancer</h3>
+            <p class="text-xs sm:text-sm text-muted-soft">
+              Entourez les mots-clés avec <strong>**mot**</strong> pour qu'ils soient mis en valeur en mode Lecture facile ou surlignage.
+            </p>
+          </div>
+
+          <!-- Métadonnées : Icône, Titre, Matière -->
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <div>
+              <label for="edit-lesson-emoji" class="block text-xs font-bold mb-1">Icône</label>
+              <input
+                id="edit-lesson-emoji"
+                type="text"
+                maxlength="6"
+                class="w-full rounded-xl border surface-card px-3 py-2.5 text-center text-xl font-bold"
+              />
+            </div>
+            <div class="sm:col-span-2">
+              <label for="edit-lesson-title" class="block text-xs font-bold mb-1">Titre de la leçon</label>
+              <input
+                id="edit-lesson-title"
+                type="text"
+                class="w-full rounded-xl border surface-card px-3 py-2.5 text-sm font-bold"
+              />
+            </div>
+            <div>
+              <label for="edit-lesson-subject" class="block text-xs font-bold mb-1">Matière</label>
+              <input
+                id="edit-lesson-subject"
+                type="text"
+                class="w-full rounded-xl border surface-card px-3 py-2.5 text-sm font-bold"
+              />
+            </div>
+          </div>
+
+          <!-- Édition des 4 cartes -->
+          <div class="space-y-3">
+            <h4 class="font-extrabold text-base">Les 4 cartes de découverte</h4>
+            <div id="edit-cards-container" class="grid grid-cols-1 md:grid-cols-2 gap-3.5"></div>
+          </div>
+
+          <!-- Édition des 4 paires d'association -->
+          <div class="space-y-3">
+            <h4 class="font-extrabold text-base">Les 4 paires du mini-jeu</h4>
+            <div id="edit-pairs-container" class="space-y-2.5"></div>
+          </div>
+
+          <!-- Édition des 4 questions du quiz -->
+          <div class="space-y-3">
+            <h4 class="font-extrabold text-base">Les 4 questions du quiz</h4>
+            <div id="edit-quiz-container" class="space-y-4"></div>
+          </div>
+
+          <!-- Bouton principal : Enregistrer et lancer pour ma fille -->
+          <div class="pt-4 border-t flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3" style="border-color: var(--border-soft);">
+            <button
+              id="btn-save-and-launch-lesson"
+              type="button"
+              class="touch-btn px-7 py-4 rounded-2xl font-extrabold bg-sky-600 text-white hover:bg-sky-700 transition shadow-sm"
+            >
+              Enregistrer et lancer pour ma fille 🚀
+            </button>
+          </div>
+        </div>
+
+        <!-- Réglages rapides : réinitialiser le profil, gérer les leçons, changer le PIN -->
+        <div class="surface-card rounded-3xl border p-5 sm:p-7 shadow-sm space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 class="t-title font-extrabold">3. Réglages rapides & leçons enregistrées</h3>
+              <p class="text-xs sm:text-sm text-muted-soft">
+                Personnalisez le code PIN, réinitialisez le profil de découverte ou gérez les leçons.
+              </p>
+            </div>
+            <button
+              id="btn-reset-profile"
+              type="button"
+              class="touch-btn px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold border bg-rose-50 text-rose-900 border-rose-200 hover:bg-rose-100 transition shrink-0"
+            >
+              Réinitialiser le profil
+            </button>
+          </div>
+
+          <!-- Changement du code PIN parent -->
+          <div class="surface-soft rounded-2xl border p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <label for="input-change-pin" class="text-sm font-bold">
+              Changer le code PIN parent (4 à 8 chiffres) :
+            </label>
+            <div class="flex items-center gap-2">
+              <input
+                id="input-change-pin"
+                type="text"
+                inputmode="numeric"
+                maxlength="8"
+                class="w-28 rounded-xl border surface-card px-3 py-2 text-sm font-extrabold text-center"
+              />
+              <button
+                id="btn-save-new-pin"
+                type="button"
+                class="touch-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-amber-500 text-white hover:bg-amber-600 transition"
+              >
+                Enregistrer le PIN
+              </button>
+            </div>
+          </div>
+
+          <!-- Liste des leçons enregistrées -->
+          <div class="space-y-2.5">
+            <h4 class="text-sm font-extrabold uppercase tracking-wide text-muted-soft">
+              Leçons disponibles sur cet appareil
+            </h4>
+            <div id="parent-lessons-list" class="space-y-2.5"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // =========================================================================
+    // DONNÉES DE DÉMONSTRATION PAR DÉFAUT : LE CYCLE DE L'EAU
+    // =========================================================================
+    const DEFAULT_WATER_LESSON = {
+      id: "demo-cycle-de-leau",
+      title: "Le cycle de l'eau",
+      emoji: "💧",
+      subject: "Sciences",
+      isDemo: true,
+      cards: [
+        {
+          id: "evaporation",
+          emoji: "☀️",
+          title: "Évaporation",
+          rawText: "La chaleur du **soleil** réchauffe l'eau des mers et des rivières : l'eau **s'évapore** et monte dans l'air."
+        },
+        {
+          id: "condensation",
+          emoji: "☁️",
+          title: "Condensation",
+          rawText: "En montant dans l'air plus frais, la vapeur d'eau forme de minuscules gouttelettes : c'est la **condensation** qui crée les **nuages**."
+        },
+        {
+          id: "precipitations",
+          emoji: "🌧️",
+          title: "Précipitations",
+          rawText: "Quand les nuages sont trop chargés d'eau, l'eau retombe vers la Terre : ce sont les **précipitations** (**pluie**, **neige** ou **grêle**)."
+        },
+        {
+          id: "ruissellement",
+          emoji: "🏞️",
+          title: "Ruissellement",
+          rawText: "L'eau qui tombe suit la pente des terrains et des rivières : le **ruissellement** ramène l'eau vers la **mer**."
+        }
+      ],
+      matchPairs: [
+        {
+          id: "pair-1",
+          leftEmoji: "☀️",
+          leftText: "Évaporation",
+          rightText: "Le soleil réchauffe l'eau qui monte dans l'air"
+        },
+        {
+          id: "pair-2",
+          leftEmoji: "☁️",
+          leftText: "Condensation",
+          rightText: "Les gouttelettes se rassemblent pour former un nuage"
+        },
+        {
+          id: "pair-3",
+          leftEmoji: "🌧️",
+          leftText: "Précipitations",
+          rightText: "La pluie ou la neige tombe des nuages vers la Terre"
+        },
+        {
+          id: "pair-4",
+          leftEmoji: "🏞️",
+          leftText: "Ruissellement",
+          rightText: "L'eau coule dans les rivières et retourne à la mer"
+        }
+      ],
+      quizQuestions: [
+        {
+          id: "q-1",
+          emoji: "☀️",
+          question: "Comment s'appelle le moment où le soleil fait monter l'eau dans l'air ?",
+          options: [
+            { id: "a", text: "L'évaporation" },
+            { id: "b", text: "Le ruissellement" },
+            { id: "c", text: "La fonte des glaces" }
+          ],
+          correctId: "a",
+          hint: "Pense à la chaleur qui fait s'envoler l'eau : cela commence par « éva... ».",
+          praise: "Bravo ! L'évaporation, c'est quand l'eau se transforme en vapeur et monte dans l'air."
+        },
+        {
+          id: "q-2",
+          emoji: "☁️",
+          question: "Qu'est-ce que la condensation dans le cycle de l'eau ?",
+          options: [
+            { id: "a", text: "Le moment où la vapeur forme un nuage" },
+            { id: "b", text: "Le vent qui souffle très fort" },
+            { id: "c", text: "L'eau qui s'arrête de couler" }
+          ],
+          correctId: "a",
+          hint: "En altitude, l'air est plus frais et les gouttelettes se regroupent en nuage.",
+          praise: "Super ! La condensation rassemble les petites gouttelettes pour former les nuages."
+        },
+        {
+          id: "q-3",
+          emoji: "🌧️",
+          question: "Quel mot désigne la pluie ou la neige qui tombe des nuages ?",
+          options: [
+            { id: "a", text: "La condensation" },
+            { id: "b", text: "Les précipitations" },
+            { id: "c", text: "L'évaporation" }
+          ],
+          correctId: "b",
+          hint: "C'est l'étape où l'eau redescend des nuages vers le sol.",
+          praise: "Très bien ! La pluie et la neige font partie des précipitations."
+        },
+        {
+          id: "q-4",
+          emoji: "🏞️",
+          question: "À quoi sert le ruissellement à la fin du parcours ?",
+          options: [
+            { id: "a", text: "À faire briller le soleil" },
+            { id: "b", text: "À ramener l'eau vers les rivières et la mer" },
+            { id: "c", text: "À transformer la pluie en fumée" }
+          ],
+          correctId: "b",
+          hint: "L'eau suit la pente et coule dans les rivières pour rejoindre une grande étendue d'eau.",
+          praise: "Génial ! Le ruissellement guide l'eau vers les rivières puis vers la mer."
+        }
+      ]
+    };
+
+    // =========================================================================
+    // ÉTAT GLOBAL ET PERSISTANCE DANS LOCALSTORAGE
+    // =========================================================================
+    const STORAGE_KEY = "mon_atelier_magique_v1";
+
+    const DEFAULT_STATE = {
+      easyRead: false,
+      visualAid: "surlignage",   // "surlignage" | "espacement" | "simple"
+      audioMode: "bouton",       // "bouton" | "auto"
+      pace: "standard",          // "standard" | "calme"
+      preferredFormat: "jeux-visuels", // "jeux-visuels" | "audio-guide" | "etape-par-etape"
+      theme: "creme",            // "creme" | "bleu" | "vert"
+      activeTab: "decouverte",   // "profil" | "decouverte" | "jeu" | "quiz" | "parent"
+      profilStep: 1,             // 1..4
+      parentPin: "1234",
+      customLessons: [],
+      activeLessonId: DEFAULT_WATER_LESSON.id,
+      matchedPairIds: [],
+      quizIndex: 0,
+      quizAnswers: {},
+      quizFinished: false
+    };
+
+    function loadAppState() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) return { ...DEFAULT_STATE };
+        const parsed = JSON.parse(saved);
+        return {
+          ...DEFAULT_STATE,
+          ...parsed,
+          customLessons: Array.isArray(parsed.customLessons) ? parsed.customLessons : [],
+          matchedPairIds: Array.isArray(parsed.matchedPairIds) ? parsed.matchedPairIds : [],
+          quizAnswers: parsed.quizAnswers && typeof parsed.quizAnswers === "object" ? parsed.quizAnswers : {}
+        };
+      } catch (err) {
+        return { ...DEFAULT_STATE };
+      }
+    }
+
+    let appState = loadAppState();
+    let parentSessionUnlocked = false;
+
+    // État local pour le mini-jeu d'association (tap gauche puis tap droite)
+    let selectedLeftId = null;
+    let selectedRightId = null;
+    let jeuFeedbackMsg = "";
+    let jeuFeedbackKind = ""; // "success" | "hint" | ""
+    let orderedRightPairIds = [];
+
+    // État local pour le module Scanner de leçon (Espace Parent)
+    let scannedImageData = null; // { base64, mimeType, dataUrl, width, height, sizeKb }
+    let editableDraftLesson = null;
+
+    function persistAppState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      } catch (err) {
+        // Ignorer si le stockage local est indisponible
+      }
+    }
+
+    function getAvailableLessons() {
+      return [DEFAULT_WATER_LESSON, ...appState.customLessons];
+    }
+
+    function getCurrentLesson() {
+      const found = getAvailableLessons().find((item) => item.id === appState.activeLessonId);
+      return found || DEFAULT_WATER_LESSON;
+    }
+
+    function setActiveLesson(lessonId, switchToTab = null) {
+      const target = getAvailableLessons().find((item) => item.id === lessonId) || DEFAULT_WATER_LESSON;
+      appState.activeLessonId = target.id;
+      appState.matchedPairIds = [];
+      appState.quizIndex = 0;
+      appState.quizAnswers = {};
+      appState.quizFinished = false;
+      selectedLeftId = null;
+      selectedRightId = null;
+      jeuFeedbackMsg = "";
+      jeuFeedbackKind = "";
+      orderedRightPairIds = [];
+      persistAppState();
+      renderLessonSelector();
+
+      if (switchToTab) {
+        switchToView(switchToTab);
+      } else {
+        refreshCurrentView();
+      }
+    }
+
+    // =========================================================================
+    // FORMATAGE DES MOTS-CLÉS (**mot**) ET LECTURE VOCALE NATURELLE FR
+    // =========================================================================
+    function escapeHtmlText(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function formatKeywordsHtml(rawText) {
+      const safe = escapeHtmlText(rawText);
+      return safe.replace(/\*\*(.+?)\*\*/g, '<span class="keyword-mark">$1</span>');
+    }
+
+    function stripAsterisks(rawText) {
+      return String(rawText || "").replace(/\*\*(.+?)\*\*/g, "$1");
+    }
+
+    let currentSpeakingButtonId = null;
+    let speechSessionCounter = 0;
+
+    function stopSpeechSynthesisNow() {
+      speechSessionCounter++;
+      if ("speechSynthesis" in window) {
+        try {
+          window.speechSynthesis.cancel();
+        } catch (err) {
+          // Ignorer si indisponible
+        }
+      }
+      currentSpeakingButtonId = null;
+      updateAllSpeakButtonsUI();
+    }
+
+    function selectBestFrenchVoice() {
+      if (!("speechSynthesis" in window)) return null;
+      const voices = window.speechSynthesis.getVoices() || [];
+      const frVoices = voices.filter((v) => v.lang && v.lang.toLowerCase().startsWith("fr"));
+      if (frVoices.length === 0) return null;
+
+      // Priorité aux voix françaises naturelles / améliorées du système
+      const priorityTerms = [
+        "enhanced",
+        "améliorée",
+        "premium",
+        "natural",
+        "audrey",
+        "amélie",
+        "amelie",
+        "thomas",
+        "aurélie",
+        "aurelie",
+        "google français",
+        "microsoft denise",
+        "microsoft henri"
+      ];
+
+      let best = frVoices[0];
+      let bestScore = -100;
+
+      for (const voice of frVoices) {
+        const lowerName = (voice.name || "").toLowerCase();
+        const lowerUri = (voice.voiceURI || "").toLowerCase();
+        let score = 0;
+
+        priorityTerms.forEach((term, index) => {
+          if (lowerName.includes(term) || lowerUri.includes(term)) {
+            score += 50 - index * 3;
+          }
+        });
+
+        if (lowerName.includes("compact") || lowerUri.includes("compact")) {
+          score -= 40;
+        }
+        if (voice.localService) {
+          score += 5;
+        }
+        if (score > bestScore) {
+          bestScore = score;
+          best = voice;
+        }
+      }
+
+      return best;
+    }
+
+    function updateAllSpeakButtonsUI() {
+      document.querySelectorAll("[data-speak-btn-id]").forEach((btn) => {
+        const btnId = btn.getAttribute("data-speak-btn-id");
+        const isPlaying = currentSpeakingButtonId === btnId;
+        const labelSpan = btn.querySelector(".speak-btn-label");
+        if (labelSpan) {
+          labelSpan.textContent = isPlaying ? "Stop" : "Écouter";
+        }
+        if (isPlaying) {
+          btn.classList.add("bg-rose-100", "text-rose-900", "border-rose-300");
+          btn.classList.remove("bg-sky-100", "text-sky-950");
+        } else {
+          btn.classList.remove("bg-rose-100", "text-rose-900", "border-rose-300");
+          btn.classList.add("bg-sky-100", "text-sky-950");
+        }
+      });
+    }
+
+    function toggleFrenchSpeech(rawText, buttonId = null) {
+      if (!("speechSynthesis" in window)) return;
+
+      // Re-clic sur le même bouton ou clic sur Stop coupe immédiatement la lecture
+      if (buttonId && currentSpeakingButtonId === buttonId) {
+        stopSpeechSynthesisNow();
+        return;
+      }
+
+      const cleaned = stripAsterisks(rawText)
+        .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      if (!cleaned) return;
+
+      stopSpeechSynthesisNow();
+      const sessionId = ++speechSessionCounter;
+      currentSpeakingButtonId = buttonId;
+      updateAllSpeakButtonsUI();
+
+      try {
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+      } catch (err) {
+        // Ignorer
+      }
+
+      const chosenVoice = selectBestFrenchVoice();
+      const sentences = cleaned
+        .split(/(?<=[.!?])\s+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      const partsToRead = sentences.length > 0 ? sentences : [cleaned];
+      let index = 0;
+
+      const readNextPart = () => {
+        if (sessionId !== speechSessionCounter) return;
+        if (index >= partsToRead.length) {
+          currentSpeakingButtonId = null;
+          updateAllSpeakButtonsUI();
+          return;
+        }
+
+        const utterance = new SpeechSynthesisUtterance(partsToRead[index]);
+        utterance.lang = "fr-FR";
+        utterance.rate = 0.92;
+        utterance.pitch = 1.02;
+        if (chosenVoice) {
+          utterance.voice = chosenVoice;
+        }
+
+        utterance.onend = () => {
+          index++;
+          if (sessionId === speechSessionCounter) {
+            if (index < partsToRead.length) {
+              setTimeout(readNextPart, 120);
+            } else {
+              currentSpeakingButtonId = null;
+              updateAllSpeakButtonsUI();
+            }
+          }
+        };
+
+        utterance.onerror = () => {
+          if (sessionId === speechSessionCounter) {
+            currentSpeakingButtonId = null;
+            updateAllSpeakButtonsUI();
+          }
+        };
+
+        try {
+          window.speechSynthesis.speak(utterance);
+        } catch (err) {
+          currentSpeakingButtonId = null;
+          updateAllSpeakButtonsUI();
+        }
+      };
+
+      readNextPart();
+    }
+
+    // =========================================================================
+    // APPLICATION DES PRÉFÉRENCES VISUELLES ET SÉLECTEUR DE LEÇON
+    // =========================================================================
+    function applyVisualPreferences() {
+      document.body.classList.toggle("easy-read-enabled", Boolean(appState.easyRead));
+      document.body.setAttribute("data-visual-aid", appState.visualAid || "surlignage");
+      document.body.setAttribute("data-pace", appState.pace || "standard");
+      document.body.setAttribute("data-theme", appState.theme || "creme");
+
+      const easyBtn = document.getElementById("btn-toggle-easy-read");
+      const easyLabel = document.getElementById("label-easy-read");
+      if (easyBtn) {
+        easyBtn.setAttribute("aria-pressed", appState.easyRead ? "true" : "false");
+        if (appState.easyRead) {
+          easyBtn.classList.add("bg-amber-300", "text-amber-950", "border-amber-400");
+          easyBtn.classList.remove("surface-soft");
+        } else {
+          easyBtn.classList.remove("bg-amber-300", "text-amber-950", "border-amber-400");
+          easyBtn.classList.add("surface-soft");
+        }
+      }
+      if (easyLabel) {
+        easyLabel.textContent = appState.easyRead ? "Lecture facile ✓" : "Lecture facile";
+      }
+    }
+
+    function renderLessonSelector() {
+      const selectEl = document.getElementById("select-active-lesson");
+      if (!selectEl) return;
+      const lessons = getAvailableLessons();
+      selectEl.innerHTML = lessons
+        .map((lesson) => {
+          const suffix = lesson.isDemo ? " (Démo)" : "";
+          return `<option value="${escapeHtmlText(lesson.id)}">${escapeHtmlText(lesson.emoji || "📘")} ${escapeHtmlText(lesson.title)}${suffix}</option>`;
+        })
+        .join("");
+      selectEl.value = getCurrentLesson().id;
+    }
+
+    // =========================================================================
+    // NAVIGATION ENTRE LES ONGLETS ET L'ESPACE PARENT
+    // =========================================================================
+    function switchToView(viewName) {
+      const validViews = ["profil", "decouverte", "jeu", "quiz", "parent"];
+      const targetView = validViews.includes(viewName) ? viewName : "decouverte";
+
+      stopSpeechSynthesisNow();
+      appState.activeTab = targetView;
+      persistAppState();
+
+      validViews.forEach((name) => {
+        const viewEl = document.getElementById(`view-${name}`);
+        if (viewEl) {
+          viewEl.classList.toggle("hidden", name !== targetView);
+        }
+      });
+
+      document.querySelectorAll(".main-tab-btn").forEach((btn) => {
+        const tabKey = btn.getAttribute("data-tab");
+        const isCurrent = tabKey === targetView;
+        btn.setAttribute("aria-current", isCurrent ? "page" : "false");
+        if (isCurrent) {
+          btn.classList.add("bg-sky-600", "text-white", "border-sky-600", "shadow-sm");
+          btn.classList.remove("surface-card");
+        } else {
+          btn.classList.remove("bg-sky-600", "text-white", "border-sky-600", "shadow-sm");
+          btn.classList.add("surface-card");
+        }
+      });
+
+      refreshCurrentView();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function refreshCurrentView() {
+      if (appState.activeTab === "profil") renderProfilView();
+      if (appState.activeTab === "decouverte") renderDecouverteView();
+      if (appState.activeTab === "jeu") renderJeuView();
+      if (appState.activeTab === "quiz") renderQuizView();
+      if (appState.activeTab === "parent") renderParentView();
+    }
+
+    // =========================================================================
+    // ONGLET "MON PROFIL" : MINI-JEU DE DÉCOUVERTE EN 4 ÉTAPES
+    // =========================================================================
+    const PROFIL_STAGES = [
+      {
+        step: 1,
+        title: "Étape 1 : Aide visuelle & mots-clés",
+        subtitle: "Comment préfères-tu voir les mots importants dans les textes ?",
+        stateKey: "visualAid",
+        options: [
+          {
+            value: "surlignage",
+            emoji: "🖍️",
+            title: "Surligner les mots-clés",
+            description: "Les mots importants ont un surlignage jaune doux."
+          },
+          {
+            value: "espacement",
+            emoji: "↔️",
+            title: "Lettres et mots espacés",
+            description: "Plus d'espace entre les lettres, les mots et les lignes."
+          },
+          {
+            value: "simple",
+            emoji: "📄",
+            title: "Texte simple",
+            description: "Mise en page sobre sans surlignage coloré."
+          }
+        ]
+      },
+      {
+        step: 2,
+        title: "Étape 2 : Écoute audio",
+        subtitle: "Veux-tu pouvoir écouter les textes à voix haute ?",
+        stateKey: "audioMode",
+        options: [
+          {
+            value: "bouton",
+            emoji: "🔊",
+            title: "Écouter quand j'appuie",
+            description: "Je choisis le bouton Écouter sur chaque carte ou question."
+          },
+          {
+            value: "auto",
+            emoji: "🎧",
+            title: "Lecture douce automatique",
+            description: "La voix lit la leçon dès l'ouverture de l'étape Découverte."
+          }
+        ]
+      },
+      {
+        step: 3,
+        title: "Étape 3 : Rythme calme",
+        subtitle: "Quel confort de lecture et de fond préfères-tu ?",
+        stateKey: "pace",
+        options: [
+          {
+            value: "calme",
+            emoji: "🐢",
+            title: "Rythme très calme (grand texte)",
+            description: "Textes plus grands et interligne encore plus aéré."
+          },
+          {
+            value: "standard",
+            emoji: "🌿",
+            title: "Confort équilibré",
+            description: "Taille lisible et espacement doux sur tout l'écran."
+          }
+        ]
+      },
+      {
+        step: 4,
+        title: "Étape 4 : Format préféré",
+        subtitle: "Quelle façon d'apprendre te plaît le plus ?",
+        stateKey: "preferredFormat",
+        options: [
+          {
+            value: "jeux-visuels",
+            emoji: "🧩",
+            title: "Mini-jeux et associations",
+            description: "Relier des idées pas à pas sans chronomètre."
+          },
+          {
+            value: "audio-guide",
+            emoji: "🗣️",
+            title: "Cartes illustrées + voix",
+            description: "Lire et écouter chaque notion clé à mon rythme."
+          },
+          {
+            value: "etape-par-etape",
+            emoji: "🏆",
+            title: "Défis et quiz avec indices",
+            description: "Répondre aux questions avec des indices bienveillants."
+          }
+        ]
+      }
+    ];
+
+    function getFormatLabel(val) {
+      if (val === "audio-guide") return "Cartes illustrées + voix";
+      if (val === "etape-par-etape") return "Défis et quiz avec indices";
+      return "Mini-jeux et associations";
+    }
+
+    function renderProfilView() {
+      const stepNum = Math.max(1, Math.min(4, Number(appState.profilStep) || 1));
+      appState.profilStep = stepNum;
+      const stage = PROFIL_STAGES[stepNum - 1];
+
+      const counterEl = document.getElementById("profil-step-counter");
+      if (counterEl) counterEl.textContent = `Étape ${stepNum} / 4`;
+
+      document.querySelectorAll(".profil-step-pill").forEach((pill) => {
+        const pStep = Number(pill.getAttribute("data-profil-jump"));
+        const active = pStep === stepNum;
+        if (active) {
+          pill.classList.add("bg-sky-600", "text-white", "border-sky-600");
+          pill.classList.remove("surface-soft");
+        } else {
+          pill.classList.remove("bg-sky-600", "text-white", "border-sky-600");
+          pill.classList.add("surface-soft");
+        }
+      });
+
+      const stageBox = document.getElementById("profil-stage-container");
+      if (stageBox) {
+        stageBox.innerHTML = `
+          <div class="space-y-1">
+            <h3 class="t-title font-extrabold">${escapeHtmlText(stage.title)}</h3>
+            <p class="t-body text-muted-soft">${escapeHtmlText(stage.subtitle)}</p>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-${stage.options.length === 2 ? "2" : "3"} gap-3.5">
+            ${stage.options
+              .map((opt) => {
+                const selected = appState[stage.stateKey] === opt.value;
+                return `
+                  <button
+                    type="button"
+                    data-profil-key="${escapeHtmlText(stage.stateKey)}"
+                    data-profil-val="${escapeHtmlText(opt.value)}"
+                    aria-pressed="${selected ? "true" : "false"}"
+                    class="profil-choice-btn touch-btn rounded-2xl p-4 sm:p-5 border text-left transition flex flex-col justify-between gap-2 ${
+                      selected
+                        ? "border-sky-600 bg-sky-50 ring-2 ring-sky-400/40 shadow-sm"
+                        : "surface-card hover:border-sky-300"
+                    }"
+                  >
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="text-3xl" aria-hidden="true">${opt.emoji}</span>
+                      ${
+                        selected
+                          ? '<span class="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-sky-600 text-white">Choisi ✓</span>'
+                          : '<span class="text-xs font-bold text-muted-soft">Toucher</span>'
+                      }
+                    </div>
+                    <div class="space-y-1">
+                      <div class="t-lead font-extrabold">${escapeHtmlText(opt.title)}</div>
+                      <div class="text-xs sm:text-sm text-muted-soft">${escapeHtmlText(opt.description)}</div>
+                    </div>
+                  </button>
+                `;
+              })
+              .join("")}
+          </div>
+        `;
+      }
+
+      const prevBtn = document.getElementById("btn-profil-prev");
+      const nextBtn = document.getElementById("btn-profil-next");
+      if (prevBtn) {
+        prevBtn.style.visibility = stepNum > 1 ? "visible" : "hidden";
+      }
+      if (nextBtn) {
+        nextBtn.textContent = stepNum < 4 ? "Étape suivante →" : "Découvrir la leçon →";
+      }
+
+      const summaryGrid = document.getElementById("profil-summary-grid");
+      if (summaryGrid) {
+        const aidLabel =
+          appState.visualAid === "espacement"
+            ? "Lettres et mots espacés"
+            : appState.visualAid === "simple"
+            ? "Texte simple"
+            : "Surlignage des mots-clés";
+        const audioLabel =
+          appState.audioMode === "auto"
+            ? "Lecture douce automatique"
+            : "Écouter quand j'appuie";
+        const paceLabel =
+          appState.pace === "calme"
+            ? "Rythme très calme (grand texte)"
+            : "Confort équilibré";
+
+        summaryGrid.innerHTML = `
+          <div class="surface-card rounded-2xl border p-3.5">
+            <div class="text-xs font-bold text-muted-soft">1. Aide visuelle</div>
+            <div class="t-body font-extrabold mt-0.5">${escapeHtmlText(aidLabel)}</div>
+          </div>
+          <div class="surface-card rounded-2xl border p-3.5">
+            <div class="text-xs font-bold text-muted-soft">2. Écoute audio</div>
+            <div class="t-body font-extrabold mt-0.5">${escapeHtmlText(audioLabel)}</div>
+          </div>
+          <div class="surface-card rounded-2xl border p-3.5">
+            <div class="text-xs font-bold text-muted-soft">3. Rythme</div>
+            <div class="t-body font-extrabold mt-0.5">${escapeHtmlText(paceLabel)}</div>
+          </div>
+          <div class="surface-card rounded-2xl border p-3.5">
+            <div class="text-xs font-bold text-muted-soft">4. Format préféré</div>
+            <div class="t-body font-extrabold mt-0.5">${escapeHtmlText(getFormatLabel(appState.preferredFormat))}</div>
+          </div>
+        `;
+      }
+    }
+
+    // =========================================================================
+    // ONGLET "1 DÉCOUVERTE" : 4 CARTES PÉDAGOGIQUES
+    // =========================================================================
+    function renderDecouverteView() {
+      const lesson = getCurrentLesson();
+      const headingEl = document.getElementById("heading-decouverte");
+      const subjectEl = document.getElementById("decouverte-subject-pill");
+      const gridEl = document.getElementById("decouverte-cards-grid");
+
+      if (headingEl) headingEl.textContent = `${lesson.title} ${lesson.emoji || "📘"}`;
+      if (subjectEl) subjectEl.textContent = lesson.subject || "Leçon";
+
+      if (gridEl) {
+        gridEl.innerHTML = lesson.cards
+          .map((card, idx) => {
+            const btnId = `speak-card-${card.id || idx}`;
+            return `
+              <article class="surface-card rounded-3xl border p-5 sm:p-6 shadow-sm flex flex-col justify-between gap-4">
+                <div class="space-y-3">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="text-4xl" aria-hidden="true">${escapeHtmlText(card.emoji || "✨")}</span>
+                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-sky-100 text-sky-950">
+                      Carte ${idx + 1} / ${lesson.cards.length}
+                    </span>
+                  </div>
+                  <h3 class="t-title font-extrabold">${escapeHtmlText(card.title)}</h3>
+                  <p class="t-lead">${formatKeywordsHtml(card.rawText)}</p>
+                </div>
+
+                <div class="pt-2 flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    data-speak-btn-id="${escapeHtmlText(btnId)}"
+                    data-card-index="${idx}"
+                    class="decouverte-listen-btn touch-btn px-5 py-3 rounded-2xl font-bold border bg-sky-100 text-sky-950 hover:bg-sky-200 transition inline-flex items-center gap-2"
+                  >
+                    <span aria-hidden="true">🔊</span>
+                    <span class="speak-btn-label">Écouter</span>
+                  </button>
+                </div>
+              </article>
+            `;
+          })
+          .join("");
+      }
+
+      if (appState.audioMode === "auto" && lesson.cards[0]) {
+        const first = lesson.cards[0];
+        toggleFrenchSpeech(`${lesson.title}. ${first.title}. ${stripAsterisks(first.rawText)}`, `speak-card-${first.id || 0}`);
+      }
+    }
+
+    // =========================================================================
+    // ONGLET "2 MINI-JEU" : ASSOCIATION PAR SIMPLE CLIC / TAP
+    // =========================================================================
+    function syncRightPairOrder() {
+      const pairs = getCurrentLesson().matchPairs;
+      const ids = pairs.map((p) => p.id);
+      const isValid =
+        orderedRightPairIds.length === ids.length &&
+        ids.every((id) => orderedRightPairIds.includes(id));
+
+      if (!isValid) {
+        orderedRightPairIds = [...ids];
+        if (orderedRightPairIds.length === 4) {
+          orderedRightPairIds = [ids[2], ids[0], ids[3], ids[1]];
+        } else {
+          orderedRightPairIds.reverse();
+        }
+      }
+    }
+
+    function renderJeuFeedback() {
+      const banner = document.getElementById("jeu-feedback-banner");
+      if (!banner) return;
+      if (!jeuFeedbackMsg) {
+        banner.classList.add("hidden");
+        return;
+      }
+      banner.className = "rounded-2xl p-4 border t-body font-bold ";
+      if (jeuFeedbackKind === "success") {
+        banner.className += "bg-emerald-50 border-emerald-300 text-emerald-950";
+      } else {
+        banner.className += "bg-amber-50 border-amber-300 text-amber-950";
+      }
+      banner.textContent = jeuFeedbackMsg;
+      banner.classList.remove("hidden");
+    }
+
+    function renderJeuView() {
+      const lesson = getCurrentLesson();
+      const pairs = lesson.matchPairs;
+      syncRightPairOrder();
+
+      const matchedCount = appState.matchedPairIds.filter((id) =>
+        pairs.some((p) => p.id === id)
+      ).length;
+      const totalPairs = pairs.length || 1;
+      const pct = Math.round((matchedCount / totalPairs) * 100);
+
+      const badgeEl = document.getElementById("jeu-score-badge");
+      const pctEl = document.getElementById("jeu-progress-pct");
+      const barEl = document.getElementById("jeu-progress-bar");
+      if (badgeEl) badgeEl.textContent = `${matchedCount} / ${pairs.length} reliés`;
+      if (pctEl) pctEl.textContent = `${pct} %`;
+      if (barEl) barEl.style.width = `${pct}%`;
+
+      renderJeuFeedback();
+
+      const leftCol = document.getElementById("jeu-left-column");
+      const rightCol = document.getElementById("jeu-right-column");
+
+      if (leftCol) {
+        leftCol.innerHTML = pairs
+          .map((pair) => {
+            const done = appState.matchedPairIds.includes(pair.id);
+            const selected = selectedLeftId === pair.id;
+            let cls = "surface-card hover:border-sky-400";
+            if (done) cls = "bg-emerald-50 border-emerald-400";
+            else if (selected) cls = "bg-sky-50 border-sky-600 ring-2 ring-sky-400/50";
+
+            return `
+              <button
+                type="button"
+                data-match-col="left"
+                data-match-pair-id="${escapeHtmlText(pair.id)}"
+                class="jeu-pair-btn touch-btn w-full rounded-2xl p-4 border text-left flex items-center justify-between gap-3 transition ${cls}"
+              >
+                <div class="flex items-center gap-3 min-w-0">
+                  <span class="text-3xl shrink-0" aria-hidden="true">${escapeHtmlText(pair.leftEmoji || "🔹")}</span>
+                  <span class="t-lead font-extrabold">${escapeHtmlText(pair.leftText)}</span>
+                </div>
+                ${
+                  done
+                    ? '<span class="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-600 text-white shrink-0">Relié ✓</span>'
+                    : selected
+                    ? '<span class="px-3 py-1 rounded-full text-xs font-extrabold bg-sky-600 text-white shrink-0">Sélectionné</span>'
+                    : '<span class="text-xs font-bold text-muted-soft shrink-0">Gauche</span>'
+                }
+              </button>
+            `;
+          })
+          .join("");
+      }
+
+      if (rightCol) {
+        rightCol.innerHTML = orderedRightPairIds
+          .map((pairId) => {
+            const pair = pairs.find((p) => p.id === pairId);
+            if (!pair) return "";
+            const done = appState.matchedPairIds.includes(pair.id);
+            const selected = selectedRightId === pair.id;
+            let cls = "surface-card hover:border-emerald-400";
+            if (done) cls = "bg-emerald-50 border-emerald-400";
+            else if (selected) cls = "bg-emerald-50 border-emerald-600 ring-2 ring-emerald-400/50";
+
+            return `
+              <button
+                type="button"
+                data-match-col="right"
+                data-match-pair-id="${escapeHtmlText(pair.id)}"
+                class="jeu-pair-btn touch-btn w-full rounded-2xl p-4 border text-left flex items-center justify-between gap-3 transition ${cls}"
+              >
+                <span class="t-lead font-bold">${escapeHtmlText(pair.rightText)}</span>
+                ${
+                  done
+                    ? '<span class="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-600 text-white shrink-0">✓</span>'
+                    : selected
+                    ? '<span class="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-600 text-white shrink-0">Sélectionné</span>'
+                    : '<span class="text-xs font-bold text-muted-soft shrink-0">Droite</span>'
+                }
+              </button>
+            `;
+          })
+          .join("");
+      }
+    }
+
+    function handleJeuTap(col, pairId) {
+      const pairs = getCurrentLesson().matchPairs;
+      if (appState.matchedPairIds.includes(pairId)) return;
+
+      if (col === "left") {
+        selectedLeftId = selectedLeftId === pairId ? null : pairId;
+      } else {
+        selectedRightId = selectedRightId === pairId ? null : pairId;
+      }
+
+      if (selectedLeftId && selectedRightId) {
+        if (selectedLeftId === selectedRightId) {
+          const matchedPair = pairs.find((p) => p.id === selectedLeftId);
+          if (!appState.matchedPairIds.includes(selectedLeftId)) {
+            appState.matchedPairIds.push(selectedLeftId);
+          }
+          selectedLeftId = null;
+          selectedRightId = null;
+          jeuFeedbackKind = "success";
+          jeuFeedbackMsg = matchedPair
+            ? `Bravo ! « ${matchedPair.leftText} » va bien avec « ${matchedPair.rightText} ».`
+            : "Bravo ! Paire trouvée.";
+          persistAppState();
+          renderJeuView();
+        } else {
+          const leftItem = pairs.find((p) => p.id === selectedLeftId);
+          selectedLeftId = null;
+          selectedRightId = null;
+          jeuFeedbackKind = "hint";
+          jeuFeedbackMsg = leftItem
+            ? `Indice doux : relis la carte « ${leftItem.leftText} » puis essaie une autre carte à droite.`
+            : "Indice doux : pas tout à fait, essaie tranquillement une autre association.";
+          renderJeuView();
+        }
+      } else {
+        renderJeuView();
+      }
+    }
+
+    // =========================================================================
+    // ONGLET "3 QUIZ" : 4 QUESTIONS MODIFIABLES LIBREMENT + CÉLÉBRATION
+    // =========================================================================
+    function renderQuizView() {
+      const lesson = getCurrentLesson();
+      const questions = lesson.quizQuestions;
+      const total = questions.length;
+
+      const badgeEl = document.getElementById("quiz-question-badge");
+      const barEl = document.getElementById("quiz-progress-bar");
+      const areaEl = document.getElementById("quiz-dynamic-area");
+      if (!areaEl) return;
+
+      if (appState.quizFinished) {
+        if (badgeEl) badgeEl.textContent = "Récompense";
+        if (barEl) barEl.style.width = "100%";
+
+        let starsEarned = 0;
+        questions.forEach((q) => {
+          if (appState.quizAnswers[q.id] === q.correctId) {
+            starsEarned++;
+          }
+        });
+
+        const otherLessons = getAvailableLessons().filter((l) => l.id !== lesson.id);
+
+        areaEl.innerHTML = `
+          <div class="rounded-3xl p-6 sm:p-8 bg-emerald-50 border border-emerald-300 text-center space-y-5">
+            <div class="text-5xl sm:text-6xl" aria-hidden="true">🌟🎉🏆🎉🌟</div>
+            <div class="space-y-2">
+              <span class="inline-block px-4 py-1 rounded-full text-sm font-extrabold bg-emerald-200 text-emerald-950">
+                ${starsEarned} / ${total} bonnes réponses
+              </span>
+              <h3 class="t-hero font-extrabold text-emerald-950">
+                Bravo ! Tu as terminé le quiz !
+              </h3>
+              <p class="t-lead max-w-xl mx-auto text-emerald-900">
+                Tu as parcouru « ${escapeHtmlText(lesson.title)} » avec beaucoup d'attention. Tu peux rejouer ou choisir une autre leçon.
+              </p>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <button
+                id="btn-quiz-replay"
+                type="button"
+                class="touch-btn px-6 py-3.5 rounded-2xl font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 transition shadow-sm"
+              >
+                Rejouer le quiz 🔄
+              </button>
+
+              ${
+                otherLessons.length > 0
+                  ? `
+                    <button
+                      id="btn-quiz-next-lesson"
+                      type="button"
+                      data-next-lesson-id="${escapeHtmlText(otherLessons[0].id)}"
+                      class="touch-btn px-6 py-3.5 rounded-2xl font-extrabold bg-sky-600 text-white hover:bg-sky-700 transition shadow-sm"
+                    >
+                      Leçon suivante : ${escapeHtmlText(otherLessons[0].title)} →
+                    </button>
+                  `
+                  : `
+                    <button
+                      id="btn-quiz-back-discovery"
+                      type="button"
+                      class="touch-btn px-6 py-3.5 rounded-2xl font-extrabold bg-sky-600 text-white hover:bg-sky-700 transition shadow-sm"
+                    >
+                      Revoir la découverte 📖
+                    </button>
+                  `
+              }
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      const qIdx = Math.max(0, Math.min(total - 1, Number(appState.quizIndex) || 0));
+      appState.quizIndex = qIdx;
+      const questionObj = questions[qIdx];
+      const chosenOptionId = appState.quizAnswers[questionObj.id] || null;
+      const chosenIsRight = chosenOptionId !== null && chosenOptionId === questionObj.correctId;
+      const isLastQuestion = qIdx === total - 1;
+      const listenQuizBtnId = `speak-quiz-${questionObj.id || qIdx}`;
+
+      if (badgeEl) badgeEl.textContent = `Question ${qIdx + 1} / ${total}`;
+      if (barEl) barEl.style.width = `${Math.round(((qIdx + 1) / total) * 100)}%`;
+
+      areaEl.innerHTML = `
+        <div class="space-y-5">
+          <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+            <div class="flex items-start gap-3">
+              <span class="text-4xl shrink-0" aria-hidden="true">${escapeHtmlText(questionObj.emoji || "❓")}</span>
+              <h3 class="t-title font-extrabold">
+                ${qIdx + 1}. ${escapeHtmlText(questionObj.question)}
+              </h3>
+            </div>
+            <button
+              type="button"
+              data-speak-btn-id="${escapeHtmlText(listenQuizBtnId)}"
+              class="quiz-listen-btn touch-btn px-4 py-2.5 rounded-2xl font-bold border bg-sky-100 text-sky-950 hover:bg-sky-200 transition inline-flex items-center gap-2 shrink-0 self-start"
+            >
+              <span aria-hidden="true">🔊</span>
+              <span class="speak-btn-label">Écouter</span>
+            </button>
+          </div>
+
+          <!-- Options cliquables et modifiables librement à tout moment -->
+          <div class="grid grid-cols-1 gap-3" role="group" aria-label="Choix de réponse">
+            ${questionObj.options
+              .map((opt) => {
+                const isSelected = chosenOptionId === opt.id;
+                const isCorrectOpt = opt.id === questionObj.correctId;
+
+                let optClass = "surface-card hover:border-sky-400";
+                let badgeText = "Choisir";
+                let badgeClass = "surface-soft text-muted-soft";
+
+                if (isSelected && isCorrectOpt) {
+                  optClass = "bg-emerald-50 border-emerald-600 ring-2 ring-emerald-400/50";
+                  badgeText = "Bonne réponse ✓";
+                  badgeClass = "bg-emerald-600 text-white";
+                } else if (isSelected && !isCorrectOpt) {
+                  optClass = "bg-amber-50 border-amber-500 ring-2 ring-amber-400/50";
+                  badgeText = "À réessayer";
+                  badgeClass = "bg-amber-500 text-white";
+                }
+
+                return `
+                  <button
+                    type="button"
+                    data-quiz-qid="${escapeHtmlText(questionObj.id)}"
+                    data-quiz-oid="${escapeHtmlText(opt.id)}"
+                    aria-pressed="${isSelected ? "true" : "false"}"
+                    class="quiz-option-btn touch-btn w-full rounded-2xl p-4 sm:p-5 border text-left flex items-center justify-between gap-4 transition ${optClass}"
+                  >
+                    <span class="t-lead font-bold">${escapeHtmlText(opt.text)}</span>
+                    <span class="px-3 py-1 rounded-full text-xs font-extrabold shrink-0 ${badgeClass}">
+                      ${badgeText}
+                    </span>
+                  </button>
+                `;
+              })
+              .join("")}
+          </div>
+
+          <!-- Retour bienveillant : félicitations ou indice doux -->
+          ${
+            chosenOptionId
+              ? chosenIsRight
+                ? `
+                  <div class="rounded-2xl p-4 sm:p-5 bg-emerald-50 border border-emerald-300 text-emerald-950 t-body font-bold" role="status" aria-live="polite">
+                    🎉 ${escapeHtmlText(questionObj.praise)}
+                  </div>
+                `
+                : `
+                  <div class="rounded-2xl p-4 sm:p-5 bg-amber-50 border border-amber-300 text-amber-950 t-body space-y-1" role="status" aria-live="polite">
+                    <div class="font-extrabold">💡 Indice bienveillant (tu peux toucher une autre réponse à tout moment) :</div>
+                    <p>${escapeHtmlText(questionObj.hint)}</p>
+                  </div>
+                `
+              : `
+                <p class="t-body text-muted-soft italic">
+                  Touche une réponse pour essayer. Tu peux changer ton choix librement autant de fois que tu veux.
+                </p>
+              `
+          }
+
+          <!-- Boutons "← Question précédente" et "Question suivante →" / "Voir ma récompense" -->
+          <div class="pt-4 border-t flex flex-wrap items-center justify-between gap-3" style="border-color: var(--border-soft);">
+            ${
+              qIdx > 0
+                ? `
+                  <button
+                    id="btn-quiz-prev"
+                    type="button"
+                    class="touch-btn px-5 py-3 rounded-2xl font-bold border surface-soft hover:opacity-90 transition"
+                  >
+                    ← Question précédente
+                  </button>
+                `
+                : "<div></div>"
+            }
+
+            <button
+              id="btn-quiz-next"
+              type="button"
+              class="touch-btn px-6 py-3.5 rounded-2xl font-extrabold bg-sky-600 text-white hover:bg-sky-700 transition shadow-sm ml-auto"
+            >
+              ${isLastQuestion ? "Voir ma récompense 🏆" : "Question suivante →"}
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // =========================================================================
+    // ESPACE PARENT : COMPRESSION PHOTO, NETLIFY FUNCTION + SECOURS OCR LOCAL
+    // =========================================================================
+    function renderParentView() {
+      const pinScreen = document.getElementById("parent-pin-screen");
+      const dashboard = document.getElementById("parent-dashboard");
+      const pinDisplay = document.getElementById("display-current-pin");
+      if (pinDisplay) pinDisplay.textContent = appState.parentPin || "1234";
+
+      if (pinScreen) pinScreen.classList.toggle("hidden", parentSessionUnlocked);
+      if (dashboard) dashboard.classList.toggle("hidden", !parentSessionUnlocked);
+
+      if (!parentSessionUnlocked) return;
+
+      const changePinInput = document.getElementById("input-change-pin");
+      if (changePinInput && !changePinInput.value) {
+        changePinInput.value = appState.parentPin || "1234";
+      }
+
+      renderParentLessonsList();
+      if (editableDraftLesson) {
+        renderDraftEditorForm();
+      }
+    }
+
+    function renderParentLessonsList() {
+      const container = document.getElementById("parent-lessons-list");
+      if (!container) return;
+      const lessons = getAvailableLessons();
+
+      container.innerHTML = lessons
+        .map((lesson) => {
+          const activeNow = lesson.id === getCurrentLesson().id;
+          return `
+            <div class="surface-soft rounded-2xl border p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div class="flex items-center gap-3 min-w-0">
+                <span class="text-2xl shrink-0" aria-hidden="true">${escapeHtmlText(lesson.emoji || "📘")}</span>
+                <div class="min-w-0">
+                  <div class="font-extrabold text-sm sm:text-base flex flex-wrap items-center gap-2">
+                    <span>${escapeHtmlText(lesson.title)}</span>
+                    ${lesson.isDemo ? '<span class="px-2.5 py-0.5 rounded-full text-xs bg-sky-100 text-sky-950">Démo</span>' : ""}
+                    ${activeNow ? '<span class="px-2.5 py-0.5 rounded-full text-xs bg-emerald-600 text-white">Active</span>' : ""}
+                  </div>
+                  <div class="text-xs text-muted-soft">
+                    ${escapeHtmlText(lesson.subject || "Leçon")} • ${lesson.cards.length} cartes • ${lesson.matchPairs.length} paires • ${lesson.quizQuestions.length} questions
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  data-parent-launch-id="${escapeHtmlText(lesson.id)}"
+                  class="touch-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-sky-600 text-white hover:bg-sky-700 transition"
+                >
+                  Lancer
+                </button>
+                ${
+                  !lesson.isDemo
+                    ? `
+                      <button
+                        type="button"
+                        data-parent-delete-id="${escapeHtmlText(lesson.id)}"
+                        class="touch-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-rose-100 text-rose-900 hover:bg-rose-200 transition"
+                      >
+                        Supprimer
+                      </button>
+                    `
+                    : ""
+                }
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+    }
+
+    function setScanStatusBanner(message, tone = "info", detail = "") {
+      const box = document.getElementById("scan-generation-status");
+      if (!box) return;
+      box.className = "rounded-2xl p-4 border t-body space-y-1 ";
+      if (tone === "error") {
+        box.className += "bg-rose-50 border-rose-300 text-rose-950";
+      } else if (tone === "success") {
+        box.className += "bg-emerald-50 border-emerald-300 text-emerald-950";
+      } else {
+        box.className += "bg-sky-50 border-sky-300 text-sky-950";
+      }
+      box.innerHTML = `
+        <div class="font-extrabold">${escapeHtmlText(message)}</div>
+        ${detail ? `<div class="text-xs sm:text-sm opacity-90">${escapeHtmlText(detail)}</div>` : ""}
+      `;
+      box.classList.remove("hidden");
+    }
+
+    // Compression côté client : largeur/hauteur max 1024px, encodage JPEG qualité 0.78
+    function compressPhotoFile(file) {
+      return new Promise((resolve, reject) => {
+        if (!file) {
+          reject(new Error("Aucun fichier sélectionné."));
+          return;
+        }
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("Lecture du fichier impossible."));
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onerror = () => reject(new Error("Format d'image non supporté."));
+          img.onload = () => {
+            const maxSize = 1024;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxSize || height > maxSize) {
+              if (width >= height) {
+                height = Math.round((height * maxSize) / width);
+                width = maxSize;
+              } else {
+                width = Math.round((width * maxSize) / height);
+                height = maxSize;
+              }
+            }
+
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, width, height);
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const dataUrl = canvas.toDataURL("image/jpeg", 0.78);
+            const base64 = dataUrl.split(",")[1] || "";
+            const sizeKb = Math.max(1, Math.round((base64.length * 3) / 4 / 1024));
+
+            resolve({
+              base64,
+              mimeType: "image/jpeg",
+              dataUrl,
+              width,
+              height,
+              sizeKb
+            });
+          };
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function handlePhotoUpload(file) {
+      if (!file) return;
+      setScanStatusBanner("Compression de la photo en cours...", "info", "Redimensionnement automatique (max 1024px, JPEG 0.78).");
+      try {
+        const compressed = await compressPhotoFile(file);
+        scannedImageData = compressed;
+
+        const previewWrap = document.getElementById("scan-preview-container");
+        const previewImg = document.getElementById("scan-preview-img");
+        const previewInfo = document.getElementById("scan-preview-info");
+        if (previewImg) previewImg.src = compressed.dataUrl;
+        if (previewInfo) {
+          previewInfo.textContent = `Photo compressée : ${compressed.width}×${compressed.height} px • ${compressed.sizeKb} Ko`;
+        }
+        if (previewWrap) previewWrap.classList.remove("hidden");
+
+        setScanStatusBanner(
+          "Photo prête pour la génération",
+          "success",
+          "Cliquez sur « Générer le cours, le jeu et le quiz » pour créer la leçon."
+        );
+      } catch (err) {
+        setScanStatusBanner("Erreur avec cette image", "error", err.message || "Essayez une autre photo.");
+      }
+    }
+
+    // Appel POST vers /.netlify/functions/gemini
+    async function callNetlifyGeminiFunction(promptText, imageObj) {
+      const response = await fetch("/.netlify/functions/gemini", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: promptText,
+          imageBase64: imageObj ? imageObj.base64 : null,
+          mimeType: imageObj ? imageObj.mimeType : "image/jpeg",
+          model: "gemini-2.5-flash"
+        })
+      });
+
+      if (!response.ok) {
+        const errText = await response.text().catch(() => "");
+        throw new Error(`Fonction Netlify indisponible (HTTP ${response.status}) ${errText.slice(0, 120)}`);
+      }
+
+      const payload = await response.json();
+      const rawContent =
+        typeof payload?.text === "string"
+          ? payload.text
+          : payload?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+      if (!rawContent) {
+        throw new Error("Réponse vide renvoyée par /.netlify/functions/gemini.");
+      }
+
+      const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+      const jsonString = jsonMatch ? jsonMatch[0] : rawContent;
+      const parsed = JSON.parse(jsonString);
+
+      if (!parsed || !Array.isArray(parsed.cards) || parsed.cards.length === 0) {
+        throw new Error("Structure JSON incomplète renvoyée par la fonction Netlify.");
+      }
+
+      return parsed;
+    }
+
+    // Secours OCR local français avec Tesseract.js lorsque /.netlify/functions/gemini n'est pas disponible
+    async function runLocalFrenchOcr(dataUrl) {
+      if (!window.Tesseract || typeof window.Tesseract.recognize !== "function") {
+        throw new Error("Secours OCR Tesseract.js non disponible.");
+      }
+      const result = await window.Tesseract.recognize(dataUrl, "fra", {
+        logger: (info) => {
+          if (info && info.status === "recognizing text" && typeof info.progress === "number") {
+            const pct = Math.round(info.progress * 100);
+            setScanStatusBanner(
+              `Secours local actif : lecture OCR en français (${pct}%)...`,
+              "info",
+              "La fonction /.netlify/functions/gemini n'étant pas joignable, la lecture s'effectue localement sur cet appareil."
+            );
+          }
+        }
+      });
+      return String(result?.data?.text || "").replace(/\s+/g, " ").trim();
+    }
+
+    // Structuration pédagogique française propre à partir d'un texte ou d'une extraction OCR
+    function buildPedagogicalLessonFromText(sourceText) {
+      const cleaned = String(sourceText || "")
+        .replace(/[|•▪■●]/g, ". ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      const lower = cleaned.toLowerCase();
+      let subject = "Leçon";
+      let emoji = "📘";
+
+      if (/(verbe|nom|adjectif|phrase|sujet|conjugaison|orthographe|grammaire|syllabe)/.test(lower)) {
+        subject = "Français";
+        emoji = "✍️";
+      } else if (/(histoire|roi|siècle|guerre|moyen âge|révolution|antiquité|préhistoire)/.test(lower)) {
+        subject = "Histoire";
+        emoji = "🏰";
+      } else if (/(géographie|carte|pays|continent|océan|fleuve|montagne|climat|région)/.test(lower)) {
+        subject = "Géographie";
+        emoji = "🌍";
+      } else if (/(math|fraction|nombre|calcul|triangle|angle|périmètre|addition|multiplication)/.test(lower)) {
+        subject = "Mathématiques";
+        emoji = "📐";
+      } else if (/(eau|plante|animal|corps|terre|soleil|énergie|vivant|sciences|nature)/.test(lower)) {
+        subject = "Sciences";
+        emoji = "🔬";
+      }
+
+      const sentences = cleaned
+        .split(/(?<=[.!?])\s+|\n+/)
+        .map((s) => s.replace(/^[-–—\d.)\s]+/, "").trim())
+        .filter((s) => s.length >= 10);
+
+      let title = "Nouvelle leçon";
+      if (sentences.length > 0) {
+        const cleanFirst = sentences[0].replace(/[.!?]+$/, "");
+        title = cleanFirst.length <= 48 ? cleanFirst : cleanFirst.split(/\s+/).slice(0, 6).join(" ");
+      }
+
+      const stopWords = new Set([
+        "dans", "pour", "avec", "sans", "sous", "vers", "chez", "entre", "comme", "mais",
+        "donc", "alors", "ainsi", "aussi", "très", "plus", "moins", "tout", "tous", "toute",
+        "toutes", "cette", "ceux", "celle", "celles", "leur", "leurs", "sont", "était",
+        "étaient", "avoir", "être", "fait", "faire", "peut", "peuvent", "quand", "comment",
+        "pourquoi", "quoi", "quel", "quelle", "quels", "quelles", "une", "des", "les"
+      ]);
+
+      function extractKeywords(sentence) {
+        const words = sentence
+          .replace(/[.,;:!?()«»"']/g, " ")
+          .split(/\s+/)
+          .filter((w) => w.length >= 4 && !stopWords.has(w.toLowerCase()));
+        const unique = [];
+        for (const w of words) {
+          if (!unique.some((u) => u.toLowerCase() === w.toLowerCase())) {
+            unique.push(w);
+          }
+          if (unique.length >= 2) break;
+        }
+        return unique;
+      }
+
+      function markKeywords(sentence, keywords) {
+        let out = sentence;
+        keywords.forEach((kw) => {
+          const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          out = out.replace(new RegExp(`\\b(${escaped})\\b`, "i"), "**$1**");
+        });
+        return out;
+      }
+
+      const fallbackSentences = [
+        `Dans la leçon « ${title} », on découvre une idée clé à retenir simplement.`,
+        `Observer les mots importants de « ${title} » aide à mieux comprendre le sens.`,
+        `Chaque étape de « ${title} » s'explique avec des exemples concrets du quotidien.`,
+        `Relire les notions de « ${title} » prépare sereinement le mini-jeu et le quiz.`
+      ];
+
+      const sourcePool = sentences.length > 0 ? sentences : fallbackSentences;
+      const cardIcons = ["1️⃣", "2️⃣", "3️⃣", "4️⃣"];
+
+      const cards = [0, 1, 2, 3].map((i) => {
+        const rawSent = sourcePool[i % sourcePool.length] || fallbackSentences[i];
+        const kws = extractKeywords(rawSent);
+        const cardTitle = kws[0]
+          ? kws[0].charAt(0).toUpperCase() + kws[0].slice(1)
+          : `Idée ${i + 1}`;
+        return {
+          emoji: cardIcons[i],
+          title: cardTitle,
+          rawText: markKeywords(rawSent, kws)
+        };
+      });
+
+      const pairIcons = ["🔹", "🔸", "⭐", "💡"];
+      const pairs = cards.map((card, i) => {
+        const plain = stripAsterisks(card.rawText);
+        const kws = extractKeywords(plain);
+        const leftText = kws.length >= 2 ? `${kws[0]} & ${kws[1]}` : card.title;
+        const rightText = plain.length > 78 ? `${plain.slice(0, 75).trim()}...` : plain;
+        return {
+          leftEmoji: pairIcons[i],
+          leftText,
+          rightText
+        };
+      });
+
+      const distractors = [
+        "Cela ne correspond pas à ce que dit la leçon",
+        "C'est l'inverse de ce qui est expliqué ici",
+        "Cette idée n'est pas mentionnée dans le cours",
+        "Cela concerne un autre sujet sans lien"
+      ];
+
+      const quiz = cards.map((card, i) => {
+        const plain = stripAsterisks(card.rawText);
+        const kws = extractKeywords(plain);
+        const targetWord = kws[0] || card.title;
+        const rightAnswer = plain.length > 86 ? `${plain.slice(0, 83).trim()}...` : plain;
+
+        return {
+          emoji: ["❓", "🧠", "🔎", "🏆"][i],
+          question: `Que faut-il retenir sur « ${targetWord} » dans cette leçon ?`,
+          correctAnswer: rightAnswer,
+          wrongAnswer1: distractors[i % distractors.length],
+          wrongAnswer2: distractors[(i + 1) % distractors.length],
+          hint: `Relis la carte « ${card.title} » et repère le mot « ${targetWord} ».`,
+          praise: `Bravo ! Tu as bien retenu l'essentiel sur « ${targetWord} ».`
+        };
+      });
+
+      return { title, emoji, subject, cards, pairs, quiz };
+    }
+
+    function buildEditableDraft(rawLesson) {
+      const stamp = Date.now();
+      const rawCards = Array.isArray(rawLesson.cards) ? rawLesson.cards : [];
+      const rawPairs = Array.isArray(rawLesson.pairs)
+        ? rawLesson.pairs
+        : Array.isArray(rawLesson.matchPairs)
+        ? rawLesson.matchPairs
+        : [];
+      const rawQuiz = Array.isArray(rawLesson.quiz)
+        ? rawLesson.quiz
+        : Array.isArray(rawLesson.quizQuestions)
+        ? rawLesson.quizQuestions
+        : [];
+
+      const cards = [0, 1, 2, 3].map((idx) => {
+        const item = rawCards[idx] || {};
+        return {
+          id: `c-${stamp}-${idx}`,
+          emoji: item.emoji || ["1️⃣", "2️⃣", "3️⃣", "4️⃣"][idx],
+          title: item.title || `Idée ${idx + 1}`,
+          rawText: item.rawText || `Notion essentielle ${idx + 1} de la leçon.`
+        };
+      });
+
+      const matchPairs = [0, 1, 2, 3].map((idx) => {
+        const item = rawPairs[idx] || {};
+        return {
+          id: `p-${stamp}-${idx}`,
+          leftEmoji: item.leftEmoji || ["🔹", "🔸", "⭐", "💡"][idx],
+          leftText: item.leftText || cards[idx].title,
+          rightText: item.rightText || stripAsterisks(cards[idx].rawText)
+        };
+      });
+
+      const quizQuestions = [0, 1, 2, 3].map((idx) => {
+        const item = rawQuiz[idx] || {};
+        const opts = [
+          { id: "opt-1", text: item.correctAnswer || stripAsterisks(cards[idx].rawText) },
+          { id: "opt-2", text: item.wrongAnswer1 || "Autre proposition" },
+          { id: "opt-3", text: item.wrongAnswer2 || "Proposition différente" }
+        ];
+        // Varie la position de la bonne réponse selon l'index de question
+        const rotated =
+          idx % 3 === 0 ? [opts[0], opts[1], opts[2]] : idx % 3 === 1 ? [opts[1], opts[0], opts[2]] : [opts[2], opts[0], opts[1]];
+
+        return {
+          id: `q-${stamp}-${idx}`,
+          emoji: item.emoji || "❓",
+          question: item.question || `Question ${idx + 1} sur « ${cards[idx].title} » ?`,
+          options: rotated,
+          correctId: "opt-1",
+          hint: item.hint || `Relis la carte « ${cards[idx].title} » pour trouver l'indice.`,
+          praise: item.praise || "Bravo ! C'est la bonne réponse !"
+        };
+      });
+
+      return {
+        id: `custom-${stamp}`,
+        title: rawLesson.title || "Nouvelle leçon",
+        emoji: rawLesson.emoji || "📘",
+        subject: rawLesson.subject || "Leçon",
+        isDemo: false,
+        cards,
+        matchPairs,
+        quizQuestions
+      };
+    }
+
+    function renderDraftEditorForm() {
+      const panel = document.getElementById("parent-editor-panel");
+      if (!editableDraftLesson || !panel) return;
+
+      panel.classList.remove("hidden");
+
+      const emojiInp = document.getElementById("edit-lesson-emoji");
+      const titleInp = document.getElementById("edit-lesson-title");
+      const subjectInp = document.getElementById("edit-lesson-subject");
+      if (emojiInp) emojiInp.value = editableDraftLesson.emoji;
+      if (titleInp) titleInp.value = editableDraftLesson.title;
+      if (subjectInp) subjectInp.value = editableDraftLesson.subject;
+
+      const cardsCont = document.getElementById("edit-cards-container");
+      if (cardsCont) {
+        cardsCont.innerHTML = editableDraftLesson.cards
+          .map(
+            (card, idx) => `
+              <div class="surface-soft rounded-2xl border p-3.5 space-y-2">
+                <div class="flex items-center gap-2">
+                  <input data-draft-card-emoji="${idx}" type="text" value="${escapeHtmlText(card.emoji)}" class="w-14 rounded-xl border surface-card p-2 text-center text-lg" />
+                  <input data-draft-card-title="${idx}" type="text" value="${escapeHtmlText(card.title)}" class="flex-1 rounded-xl border surface-card px-3 py-2 text-sm font-bold" />
+                </div>
+                <textarea data-draft-card-text="${idx}" rows="2" class="w-full rounded-xl border surface-card p-2.5 text-sm">${escapeHtmlText(card.rawText)}</textarea>
+              </div>
+            `
+          )
+          .join("");
+      }
+
+      const pairsCont = document.getElementById("edit-pairs-container");
+      if (pairsCont) {
+        pairsCont.innerHTML = editableDraftLesson.matchPairs
+          .map(
+            (pair, idx) => `
+              <div class="surface-soft rounded-2xl border p-3 grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+                <input data-draft-pair-emoji="${idx}" type="text" value="${escapeHtmlText(pair.leftEmoji)}" class="sm:col-span-1 rounded-xl border surface-card p-2 text-center text-lg" />
+                <input data-draft-pair-left="${idx}" type="text" value="${escapeHtmlText(pair.leftText)}" class="sm:col-span-5 rounded-xl border surface-card px-3 py-2 text-sm font-bold" />
+                <input data-draft-pair-right="${idx}" type="text" value="${escapeHtmlText(pair.rightText)}" class="sm:col-span-6 rounded-xl border surface-card px-3 py-2 text-sm" />
+              </div>
+            `
+          )
+          .join("");
+      }
+
+      const quizCont = document.getElementById("edit-quiz-container");
+      if (quizCont) {
+        quizCont.innerHTML = editableDraftLesson.quizQuestions
+          .map(
+            (q, idx) => `
+              <div class="surface-soft rounded-2xl border p-4 space-y-2.5">
+                <div class="flex items-center gap-2">
+                  <span class="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-amber-200 text-amber-950">Q${idx + 1}</span>
+                  <input data-draft-q-text="${idx}" type="text" value="${escapeHtmlText(q.question)}" class="flex-1 rounded-xl border surface-card px-3 py-2 text-sm font-bold" />
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  ${q.options
+                    .map((opt) => {
+                      const isCorrect = opt.id === q.correctId;
+                      return `
+                        <div class="space-y-1">
+                          <label class="flex items-center gap-1.5 text-xs font-bold ${isCorrect ? "text-emerald-800" : ""}">
+                            <input type="radio" name="draft_correct_${idx}" data-draft-q-correct="${idx}" value="${escapeHtmlText(opt.id)}" ${isCorrect ? "checked" : ""} />
+                            <span>${isCorrect ? "Bonne réponse ✓" : "Choix"}</span>
+                          </label>
+                          <input data-draft-q-opt="${idx}:${escapeHtmlText(opt.id)}" type="text" value="${escapeHtmlText(opt.text)}" class="w-full rounded-xl border surface-card px-2.5 py-2 text-xs sm:text-sm" />
+                        </div>
+                      `;
+                    })
+                    .join("")}
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <input data-draft-q-hint="${idx}" type="text" value="${escapeHtmlText(q.hint)}" placeholder="Indice bienveillant" class="rounded-xl border surface-card px-3 py-2 text-xs sm:text-sm" />
+                  <input data-draft-q-praise="${idx}" type="text" value="${escapeHtmlText(q.praise)}" placeholder="Message de félicitations" class="rounded-xl border surface-card px-3 py-2 text-xs sm:text-sm" />
+                </div>
+              </div>
+            `
+          )
+          .join("");
+      }
+    }
+
+    function readDraftFromForm() {
+      if (!editableDraftLesson) return null;
+
+      editableDraftLesson.emoji = (document.getElementById("edit-lesson-emoji")?.value || "📘").trim();
+      editableDraftLesson.title = (document.getElementById("edit-lesson-title")?.value || "Nouvelle leçon").trim();
+      editableDraftLesson.subject = (document.getElementById("edit-lesson-subject")?.value || "Leçon").trim();
+
+      editableDraftLesson.cards.forEach((card, idx) => {
+        const em = document.querySelector(`[data-draft-card-emoji="${idx}"]`);
+        const ti = document.querySelector(`[data-draft-card-title="${idx}"]`);
+        const tx = document.querySelector(`[data-draft-card-text="${idx}"]`);
+        if (em) card.emoji = em.value.trim() || "✨";
+        if (ti) card.title = ti.value.trim() || `Idée ${idx + 1}`;
+        if (tx) card.rawText = tx.value.trim();
+      });
+
+      editableDraftLesson.matchPairs.forEach((pair, idx) => {
+        const em = document.querySelector(`[data-draft-pair-emoji="${idx}"]`);
+        const le = document.querySelector(`[data-draft-pair-left="${idx}"]`);
+        const ri = document.querySelector(`[data-draft-pair-right="${idx}"]`);
+        if (em) pair.leftEmoji = em.value.trim() || "🔹";
+        if (le) pair.leftText = le.value.trim();
+        if (ri) pair.rightText = ri.value.trim();
+      });
+
+      editableDraftLesson.quizQuestions.forEach((q, idx) => {
+        const qt = document.querySelector(`[data-draft-q-text="${idx}"]`);
+        const hi = document.querySelector(`[data-draft-q-hint="${idx}"]`);
+        const pr = document.querySelector(`[data-draft-q-praise="${idx}"]`);
+        const checked = document.querySelector(`input[name="draft_correct_${idx}"]:checked`);
+        if (qt) q.question = qt.value.trim();
+        if (hi) q.hint = hi.value.trim();
+        if (pr) q.praise = pr.value.trim();
+        if (checked) q.correctId = checked.value;
+
+        q.options.forEach((opt) => {
+          const oi = document.querySelector(`[data-draft-q-opt="${idx}:${opt.id}"]`);
+          if (oi) opt.text = oi.value.trim();
+        });
+      });
+
+      return editableDraftLesson;
+    }
+
+    async function runLessonGeneration() {
+      const textArea = document.getElementById("input-scan-text");
+      let combinedText = (textArea?.value || "").trim();
+
+      if (!scannedImageData && !combinedText) {
+        setScanStatusBanner(
+          "Ajoutez une photo ou un texte de leçon",
+          "error",
+          "Prenez une photo, choisissez une image ou collez le texte d'une leçon avant de lancer la génération."
+        );
+        return;
+      }
+
+      const runBtn = document.getElementById("btn-run-generation");
+      const runLabel = document.getElementById("label-run-generation");
+      if (runBtn) runBtn.disabled = true;
+      if (runLabel) runLabel.textContent = "Génération en cours...";
+
+      const promptInstruction = `Tu es un assistant pédagogique bienveillant pour un enfant multi-dys.
+Transforme la leçon fournie en français en un objet JSON STRICTEMENT conforme à ce schéma :
+{
+  "title": "Titre court de la leçon",
+  "emoji": "1 emoji adapté",
+  "subject": "Matière scolaire",
+  "cards": [
+    { "emoji": "1 emoji", "title": "Titre court 1", "rawText": "Phrase courte avec **mot-clé**" },
+    { "emoji": "1 emoji", "title": "Titre court 2", "rawText": "Phrase courte avec **mot-clé**" },
+    { "emoji": "1 emoji", "title": "Titre court 3", "rawText": "Phrase courte avec **mot-clé**" },
+    { "emoji": "1 emoji", "title": "Titre court 4", "rawText": "Phrase courte avec **mot-clé**" }
+  ],
+  "pairs": [
+    { "leftEmoji": "1 emoji", "leftText": "Élément gauche 1", "rightText": "Explication droite 1" },
+    { "leftEmoji": "1 emoji", "leftText": "Élément gauche 2", "rightText": "Explication droite 2" },
+    { "leftEmoji": "1 emoji", "leftText": "Élément gauche 3", "rightText": "Explication droite 3" },
+    { "leftEmoji": "1 emoji", "leftText": "Élément gauche 4", "rightText": "Explication droite 4" }
+  ],
+  "quiz": [
+    {
+      "emoji": "1 emoji",
+      "question": "Question claire 1 ?",
+      "correctAnswer": "Bonne réponse",
+      "wrongAnswer1": "Mauvaise réponse 1",
+      "wrongAnswer2": "Mauvaise réponse 2",
+      "hint": "Indice doux",
+      "praise": "Félicitations"
+    }
+  ]
+}
+Génère exactement 4 cartes, 4 paires et 4 questions de quiz.
+${combinedText ? `\nTexte de la leçon :\n${combinedText}` : ""}`;
+
+      try {
+        setScanStatusBanner(
+          "Envoi vers la fonction Netlify (/.netlify/functions/gemini)...",
+          "info",
+          "Appel du modèle gemini-2.5-flash en cours..."
+        );
+
+        const netlifyData = await callNetlifyGeminiFunction(promptInstruction, scannedImageData);
+        editableDraftLesson = buildEditableDraft(netlifyData);
+        renderDraftEditorForm();
+
+        setScanStatusBanner(
+          "Génération réussie via la fonction Netlify (/.netlify/functions/gemini)",
+          "success",
+          "Le contenu a été généré avec Gemini (gemini-2.5-flash). Vous pouvez le relire puis cliquer sur « Enregistrer et lancer pour ma fille »."
+        );
+      } catch (netlifyError) {
+        // Secours local : OCR Tesseract.js (si image) + structuration pédagogique française propre
+        try {
+          let textForLocalStructuring = combinedText;
+
+          if (scannedImageData && scannedImageData.dataUrl) {
+            const ocrText = await runLocalFrenchOcr(scannedImageData.dataUrl);
+            if (ocrText) {
+              textForLocalStructuring = combinedText
+                ? `${combinedText}\n${ocrText}`
+                : ocrText;
+              if (textArea && !combinedText) {
+                textArea.value = ocrText;
+              }
+            }
+          }
+
+          if (!textForLocalStructuring || textForLocalStructuring.length < 8) {
+            throw new Error(
+              "La fonction Netlify n'est pas disponible et aucun texte lisible n'a pu être extrait de l'image. Ajoutez ou collez un texte de leçon."
+            );
+          }
+
+          const localStructured = buildPedagogicalLessonFromText(textForLocalStructuring);
+          editableDraftLesson = buildEditableDraft(localStructured);
+          renderDraftEditorForm();
+
+          setScanStatusBanner(
+            "Génération effectuée via le secours local (OCR Tesseract.js + structuration française)",
+            "success",
+            "La fonction /.netlify/functions/gemini n'étant pas disponible sur cet environnement, le secours local a préparé les 4 cartes, le mini-jeu et le quiz."
+          );
+        } catch (fallbackError) {
+          setScanStatusBanner(
+            "Impossible de générer la leçon automatiquement",
+            "error",
+            fallbackError.message || netlifyError.message
+          );
+        }
+      } finally {
+        if (runBtn) runBtn.disabled = false;
+        if (runLabel) runLabel.textContent = "Générer le cours, le jeu et le quiz";
+      }
+    }
+
+    function saveDraftAndLaunchForDaughter() {
+      const finalized = readDraftFromForm();
+      if (!finalized) return;
+
+      const existingIndex = appState.customLessons.findIndex((item) => item.id === finalized.id);
+      if (existingIndex >= 0) {
+        appState.customLessons[existingIndex] = finalized;
+      } else {
+        appState.customLessons.unshift(finalized);
+      }
+
+      persistAppState();
+      renderLessonSelector();
+      setActiveLesson(finalized.id, "decouverte");
+    }
+
+    // =========================================================================
+    // ÉCOUTEURS D'ÉVÉNEMENTS GLOBAUX
+    // =========================================================================
+    document.addEventListener("change", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      if (target.id === "select-active-lesson") {
+        const nextView = appState.activeTab === "parent" ? "decouverte" : appState.activeTab;
+        setActiveLesson(target.value, nextView);
+        return;
+      }
+
+      if (target.id === "input-scan-camera" || target.id === "input-scan-file") {
+        const fileInput = target;
+        if (fileInput.files && fileInput.files[0]) {
+          handlePhotoUpload(fileInput.files[0]);
+        }
+      }
+    });
+
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      // Bouton rapide "Lecture facile"
+      if (target.closest("#btn-toggle-easy-read")) {
+        appState.easyRead = !appState.easyRead;
+        persistAppState();
+        applyVisualPreferences();
+        return;
+      }
+
+      // Boutons d'en-tête "Profil", "Espace Parent" et "+ Scanner une leçon"
+      if (target.closest("#btn-header-profil")) {
+        switchToView("profil");
+        return;
+      }
+
+      if (target.closest("#btn-header-parent") || target.closest("#btn-plus-scanner")) {
+        switchToView("parent");
+        return;
+      }
+
+      // Onglets principaux de navigation
+      const tabBtn = target.closest(".main-tab-btn");
+      if (tabBtn) {
+        const tabKey = tabBtn.getAttribute("data-tab");
+        if (tabKey) switchToView(tabKey);
+        return;
+      }
+
+      // Navigation interne de l'onglet "Mon profil"
+      const profilJumpBtn = target.closest("[data-profil-jump]");
+      if (profilJumpBtn) {
+        appState.profilStep = Number(profilJumpBtn.getAttribute("data-profil-jump")) || 1;
+        persistAppState();
+        renderProfilView();
+        return;
+      }
+
+      const profilChoiceBtn = target.closest(".profil-choice-btn");
+      if (profilChoiceBtn) {
+        const key = profilChoiceBtn.getAttribute("data-profil-key");
+        const val = profilChoiceBtn.getAttribute("data-profil-val");
+        if (key && val) {
+          appState[key] = val;
+          persistAppState();
+          applyVisualPreferences();
+          renderProfilView();
+        }
+        return;
+      }
+
+      if (target.closest("#btn-profil-prev")) {
+        if (appState.profilStep > 1) {
+          appState.profilStep -= 1;
+          persistAppState();
+          renderProfilView();
+        }
+        return;
+      }
+
+      if (target.closest("#btn-profil-next")) {
+        if (appState.profilStep < 4) {
+          appState.profilStep += 1;
+          persistAppState();
+          renderProfilView();
+        } else {
+          switchToView("decouverte");
+        }
+        return;
+      }
+
+      if (target.closest("#btn-profil-test-voice")) {
+        toggleFrenchSpeech(
+          "Bonjour ! Voici la voix de Mon Atelier Magique. Nous avançons ensemble, calmement, étape par étape.",
+          "profil-test-voice"
+        );
+        return;
+      }
+
+      if (target.closest("#btn-start-lesson-from-profil")) {
+        switchToView("decouverte");
+        return;
+      }
+
+      // Boutons "Écouter" / "Stop" dans "1 Découverte"
+      const listenCardBtn = target.closest(".decouverte-listen-btn");
+      if (listenCardBtn) {
+        const idx = Number(listenCardBtn.getAttribute("data-card-index"));
+        const card = getCurrentLesson().cards[idx];
+        const btnId = listenCardBtn.getAttribute("data-speak-btn-id");
+        if (card) {
+          toggleFrenchSpeech(`${card.title}. ${stripAsterisks(card.rawText)}`, btnId);
+        }
+        return;
+      }
+
+      if (target.closest("#btn-go-mini-jeu")) {
+        switchToView("jeu");
+        return;
+      }
+
+      // Actions du "2 Mini-jeu"
+      const matchBtn = target.closest(".jeu-pair-btn");
+      if (matchBtn) {
+        const col = matchBtn.getAttribute("data-match-col");
+        const pairId = matchBtn.getAttribute("data-match-pair-id");
+        if (col && pairId) handleJeuTap(col, pairId);
+        return;
+      }
+
+      if (target.closest("#btn-jeu-reset")) {
+        appState.matchedPairIds = [];
+        selectedLeftId = null;
+        selectedRightId = null;
+        jeuFeedbackMsg = "";
+        jeuFeedbackKind = "";
+        orderedRightPairIds = [];
+        persistAppState();
+        renderJeuView();
+        return;
+      }
+
+      if (target.closest("#btn-go-quiz")) {
+        switchToView("quiz");
+        return;
+      }
+
+      // Actions du "3 Quiz" (chaque question reste librement modifiable à tout moment)
+      const quizOptBtn = target.closest(".quiz-option-btn");
+      if (quizOptBtn) {
+        const qid = quizOptBtn.getAttribute("data-quiz-qid");
+        const oid = quizOptBtn.getAttribute("data-quiz-oid");
+        if (qid && oid) {
+          appState.quizAnswers[qid] = oid;
+          persistAppState();
+          renderQuizView();
+        }
+        return;
+      }
+
+      const listenQuizBtn = target.closest(".quiz-listen-btn");
+      if (listenQuizBtn) {
+        const qObj = getCurrentLesson().quizQuestions[appState.quizIndex];
+        const btnId = listenQuizBtn.getAttribute("data-speak-btn-id");
+        if (qObj) {
+          const choicesText = qObj.options.map((o) => o.text).join(". Ou : ");
+          toggleFrenchSpeech(`${qObj.question}. Choix possibles : ${choicesText}`, btnId);
+        }
+        return;
+      }
+
+      if (target.closest("#btn-quiz-prev")) {
+        if (appState.quizIndex > 0) {
+          stopSpeechSynthesisNow();
+          appState.quizIndex -= 1;
+          appState.quizFinished = false;
+          persistAppState();
+          renderQuizView();
+        }
+        return;
+      }
+
+      if (target.closest("#btn-quiz-next")) {
+        stopSpeechSynthesisNow();
+        const totalQ = getCurrentLesson().quizQuestions.length;
+        if (appState.quizIndex < totalQ - 1) {
+          appState.quizIndex += 1;
+          appState.quizFinished = false;
+          persistAppState();
+          renderQuizView();
+        } else {
+          appState.quizFinished = true;
+          persistAppState();
+          renderQuizView();
+        }
+        return;
+      }
+
+      if (target.closest("#btn-quiz-replay")) {
+        appState.quizAnswers = {};
+        appState.quizIndex = 0;
+        appState.quizFinished = false;
+        persistAppState();
+        renderQuizView();
+        return;
+      }
+
+      const nextLessonBtn = target.closest("#btn-quiz-next-lesson");
+      if (nextLessonBtn) {
+        const nextId = nextLessonBtn.getAttribute("data-next-lesson-id");
+        if (nextId) setActiveLesson(nextId, "decouverte");
+        return;
+      }
+
+      if (target.closest("#btn-quiz-back-discovery")) {
+        switchToView("decouverte");
+        return;
+      }
+
+      // Actions de l'"Espace Parent"
+      if (target.closest("#btn-pin-back-child") || target.closest("#btn-parent-go-child")) {
+        switchToView("decouverte");
+        return;
+      }
+
+      if (target.closest("#btn-parent-unlock")) {
+        const enteredPin = (document.getElementById("input-parent-pin")?.value || "").trim();
+        const errEl = document.getElementById("parent-pin-error");
+        if (enteredPin === (appState.parentPin || "1234")) {
+          parentSessionUnlocked = true;
+          if (errEl) errEl.classList.add("hidden");
+          renderParentView();
+        } else if (errEl) {
+          errEl.textContent = `Code PIN incorrect. Code actuel : ${appState.parentPin || "1234"} (ou utilisez « Accès rapide »).`;
+          errEl.classList.remove("hidden");
+        }
+        return;
+      }
+
+      if (target.closest("#btn-parent-quick-access")) {
+        parentSessionUnlocked = true;
+        const errEl = document.getElementById("parent-pin-error");
+        if (errEl) errEl.classList.add("hidden");
+        renderParentView();
+        return;
+      }
+
+      if (target.closest("#btn-parent-lock")) {
+        parentSessionUnlocked = false;
+        const pinInp = document.getElementById("input-parent-pin");
+        if (pinInp) pinInp.value = "";
+        renderParentView();
+        return;
+      }
+
+      if (target.closest("#btn-scan-clear-image")) {
+        scannedImageData = null;
+        const wrap = document.getElementById("scan-preview-container");
+        const cam = document.getElementById("input-scan-camera");
+        const fil = document.getElementById("input-scan-file");
+        if (wrap) wrap.classList.add("hidden");
+        if (cam) cam.value = "";
+        if (fil) fil.value = "";
+        return;
+      }
+
+      if (target.closest("#btn-run-generation")) {
+        runLessonGeneration();
+        return;
+      }
+
+      if (target.closest("#btn-save-and-launch-lesson")) {
+        saveDraftAndLaunchForDaughter();
+        return;
+      }
+
+      if (target.closest("#btn-reset-profile")) {
+        appState.visualAid = DEFAULT_STATE.visualAid;
+        appState.audioMode = DEFAULT_STATE.audioMode;
+        appState.pace = DEFAULT_STATE.pace;
+        appState.preferredFormat = DEFAULT_STATE.preferredFormat;
+        appState.theme = DEFAULT_STATE.theme;
+        appState.easyRead = false;
+        appState.profilStep = 1;
+        persistAppState();
+        applyVisualPreferences();
+        renderProfilView();
+        setScanStatusBanner("Le profil d'apprentissage a été réinitialisé.", "success");
+        return;
+      }
+
+      if (target.closest("#btn-save-new-pin")) {
+        const newPin = (document.getElementById("input-change-pin")?.value || "").trim();
+        if (/^\d{4,8}$/.test(newPin)) {
+          appState.parentPin = newPin;
+          persistAppState();
+          const disp = document.getElementById("display-current-pin");
+          if (disp) disp.textContent = newPin;
+          setScanStatusBanner(`Nouveau code PIN parent enregistré (${newPin}).`, "success");
+        } else {
+          setScanStatusBanner("Le code PIN doit comporter entre 4 et 8 chiffres.", "error");
+        }
+        return;
+      }
+
+      const launchLessonBtn = target.closest("[data-parent-launch-id]");
+      if (launchLessonBtn) {
+        const lid = launchLessonBtn.getAttribute("data-parent-launch-id");
+        if (lid) setActiveLesson(lid, "decouverte");
+        return;
+      }
+
+      const deleteLessonBtn = target.closest("[data-parent-delete-id]");
+      if (deleteLessonBtn) {
+        const lid = deleteLessonBtn.getAttribute("data-parent-delete-id");
+        if (lid) {
+          appState.customLessons = appState.customLessons.filter((item) => item.id !== lid);
+          if (appState.activeLessonId === lid) {
+            appState.activeLessonId = DEFAULT_WATER_LESSON.id;
+          }
+          persistAppState();
+          renderLessonSelector();
+          renderParentLessonsList();
+        }
+      }
+    });
+
+    // =========================================================================
+    // INITIALISATION AU CHARGEMENT DE LA PAGE
+    // =========================================================================
+    window.addEventListener("DOMContentLoaded", () => {
+      if ("speechSynthesis" in window) {
+        try {
+          window.speechSynthesis.getVoices();
+          window.speechSynthesis.onvoiceschanged = () => {
+            selectBestFrenchVoice();
+          };
+        } catch (err) {
+          // Ignorer
+        }
+      }
+
+      applyVisualPreferences();
+      renderLessonSelector();
+      switchToView(appState.activeTab || "decouverte");
+    });
+  </script>
+</body>
+</html>
